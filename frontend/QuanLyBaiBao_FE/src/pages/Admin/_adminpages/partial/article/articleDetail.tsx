@@ -444,10 +444,9 @@ export default function ArticleDetail() {
                               {typeof author !== "string" && (
                                 <>
                                   <div className="text-sm text-gray-600">{author.email}</div>
-                                  {author.institution && (
-                                    <div className="text-sm text-gray-600">{author.institution}</div>
-                                  )}
-                                  {author.country && <div className="text-sm text-gray-600">{author.country}</div>}
+                                  <div className="text-sm text-gray-600">
+                                    {author.institution}{author.institution && author.country ? ", " : ""}{author.country}
+                                  </div>
                                 </>
                               )}
                             </CardContent>
@@ -651,7 +650,7 @@ export default function ArticleDetail() {
                         {typeof history !== "string" && (
                           <>
                             <div className="text-gray-500">
-                              {new Date(history.timestamp).toLocaleDateString("vi-VN")}
+                              {history.timestamp ? new Date(history.timestamp).toLocaleDateString("vi-VN") : ""}
                             </div>
                             {history.reason && <div className="text-gray-600 mt-1">{history.reason}</div>}
                           </>
