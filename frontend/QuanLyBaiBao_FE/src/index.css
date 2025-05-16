@@ -1,0 +1,174 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+    /* Màu chính thức từ hướng dẫn sử dụng logo */
+    --color-primary: #718255; /* Màu xanh lá chính */
+    --color-secondary: #87986b; /* Màu xanh lá nhạt hơn */
+    --color-third: #97a87c; /* Màu xanh lá nhạt hơn nữa */
+    --color-fourth: #b6c99b; /* Màu xanh lá rất nhạt */
+    --color-fifth: #cfe1b9; /* Màu xanh lá gần như trắng */
+    --color-sixth: #e8f5db; /* Màu xanh lá rất nhạt, gần trắng */
+}
+
+@theme inline {
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+    /* Cấu hình chung */
+    --radius: 0.625rem;
+    
+    /* Màu nền và văn bản */
+    --background: #ffffff; /* Nền trắng */
+    --foreground: #333333; /* Văn bản tối */
+    
+    /* Màu card */
+    --card: #ffffff; /* Nền card trắng */
+    --card-foreground: #333333; /* Văn bản card tối */
+    
+    /* Màu popover */
+    --popover: #ffffff;
+    --popover-foreground: #333333;
+    
+    /* Màu chính - sử dụng màu xanh lá của trường */
+    --primary: #718255; /* Màu xanh lá chính */
+    --primary-foreground: #ffffff; /* Văn bản trên nền xanh lá */
+    
+    /* Màu phụ */
+    --secondary: #87986b; /* Màu xanh lá nhạt hơn */
+    --secondary-foreground: #ffffff;
+    
+    /* Màu muted */
+    --muted: #f5f5f5; /* Màu xám nhạt */
+    --muted-foreground: #666666; /* Văn bản mờ */
+    
+    /* Màu accent */
+    --accent: #e8f5db; /* Màu xanh lá rất nhạt */
+    --accent-foreground: #718255; /* Văn bản trên nền accent */
+    
+    /* Màu cảnh báo */
+    --destructive: #d32f2f; /* Màu đỏ cảnh báo */
+    
+    /* Màu viền và input */
+    --border: #e0e0e0; /* Viền nhạt */
+    --input: #f5f5f5; /* Nền input xám nhạt */
+    --ring: #718255; /* Màu viền focus - xanh lá */
+    
+    /* Màu biểu đồ */
+    --chart-1: #718255; /* Xanh lá chính */
+    --chart-2: #87986b; /* Xanh lá nhạt hơn */
+    --chart-3: #97a87c; /* Xanh lá nhạt hơn nữa */
+    --chart-4: #b6c99b; /* Xanh lá rất nhạt */
+    --chart-5: #cfe1b9; /* Xanh lá gần như trắng */
+    
+    /* Màu sidebar */
+    --sidebar: #ffffff; /* Nền sidebar trắng */
+    --sidebar-foreground: #333333; /* Văn bản sidebar tối */
+    --sidebar-primary: #718255; /* Màu chính trong sidebar */
+    --sidebar-primary-foreground: #ffffff; /* Văn bản trên nền chính trong sidebar */
+    --sidebar-accent: #e8f5db; /* Màu nhấn trong sidebar */
+    --sidebar-accent-foreground: #718255; /* Văn bản trên nền nhấn trong sidebar */
+    --sidebar-border: #e0e0e0; /* Viền sidebar */
+    --sidebar-ring: #718255; /* Viền focus trong sidebar */
+}
+
+.dark {
+    /* Màu nền và văn bản */
+    --background: #1a1a1a; /* Nền tối */
+    --foreground: #f5f5f5; /* Văn bản sáng */
+    
+    /* Màu card */
+    --card: #262626; /* Nền card tối */
+    --card-foreground: #f5f5f5; /* Văn bản card sáng */
+    
+    /* Màu popover */
+    --popover: #262626;
+    --popover-foreground: #f5f5f5;
+    
+    /* Màu chính - vẫn giữ màu xanh lá nhưng sáng hơn để nổi bật trên nền tối */
+    --primary: #97a87c; /* Màu xanh lá sáng hơn */
+    --primary-foreground: #1a1a1a; /* Văn bản tối trên nền xanh lá */
+    
+    /* Màu phụ */
+    --secondary: #718255; /* Màu xanh lá đậm hơn */
+    --secondary-foreground: #f5f5f5;
+    
+    /* Màu muted */
+    --muted: #333333; /* Màu xám đậm */
+    --muted-foreground: #a0a0a0; /* Văn bản mờ */
+    
+    /* Màu accent */
+    --accent: #4a5738; /* Màu xanh lá đậm */
+    --accent-foreground: #f5f5f5; /* Văn bản trên nền accent */
+    
+    /* Màu cảnh báo */
+    --destructive: #ef5350; /* Màu đỏ cảnh báo sáng hơn */
+    
+    /* Màu viền và input */
+    --border: #404040; /* Viền đậm hơn */
+    --input: #333333; /* Nền input tối */
+    --ring: #97a87c; /* Màu viền focus - xanh lá sáng */
+    
+    /* Màu biểu đồ - sáng hơn để nổi bật trên nền tối */
+    --chart-1: #97a87c; /* Xanh lá sáng */
+    --chart-2: #b6c99b; /* Xanh lá nhạt */
+    --chart-3: #cfe1b9; /* Xanh lá rất nhạt */
+    --chart-4: #718255; /* Xanh lá đậm */
+    --chart-5: #4a5738; /* Xanh lá rất đậm */
+    
+    /* Màu sidebar */
+    --sidebar: #262626; /* Nền sidebar tối */
+    --sidebar-foreground: #f5f5f5; /* Văn bản sidebar sáng */
+    --sidebar-primary: #97a87c; /* Màu chính trong sidebar */
+    --sidebar-primary-foreground: #1a1a1a; /* Văn bản trên nền chính trong sidebar */
+    --sidebar-accent: #4a5738; /* Màu nhấn trong sidebar */
+    --sidebar-accent-foreground: #f5f5f5; /* Văn bản trên nền nhấn trong sidebar */
+    --sidebar-border: #404040; /* Viền sidebar */
+    --sidebar-ring: #97a87c; /* Viền focus trong sidebar */
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
