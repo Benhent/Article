@@ -1,15 +1,21 @@
-import React, { useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useReviewStore } from "../../../store/rootStore"
-import type { Review } from "../../../types/article"
 import { formatDate } from "../../../utils/dateUtils"
 import { Badge } from "../../../components/ui/badge"
 import { Button } from "../../../components/ui/button"
 import { Card } from "../../../components/ui/card"
 import { Input } from "../../../components/ui/input"
-import { Select } from "../../../components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../components/ui/table"
-import { toast } from "react-hot-toast"
+
+const STATUS_OPTIONS = [
+  { value: "all", label: "Tất cả trạng thái" },
+  { value: "invited", label: "Đã mời" },
+  { value: "accepted", label: "Đã chấp nhận" },
+  { value: "declined", label: "Đã từ chối" },
+  { value: "completed", label: "Đã hoàn thành" },
+  { value: "expired", label: "Hết hạn" },
+];
 
 const ReviewManage = () => {
   const navigate = useNavigate()
@@ -45,12 +51,19 @@ const ReviewManage = () => {
   const filteredReviews = reviews.filter((review) => {
     const matchesSearch = 
       (typeof review.articleId === "object" && review.articleId.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (typeof review.reviewerId === "object" && review.reviewerId.fullName.toLowerCase().includes(searchTerm.toLowerCase()))
+      (typeof review.reviewerId === "object" && review.reviewerId.name.toLowerCase().includes(searchTerm.toLowerCase()))
     
     const matchesStatus = statusFilter === "all" || review.status === statusFilter
 
     return matchesSearch && matchesStatus
   })
+
+  // Sắp xếp reviews theo hạn nộp giảm dần (mới nhất lên đầu)
+  const sortedReviews = [...filteredReviews].sort((a, b) => {
+    const dateA = new Date(a.reviewDeadline).getTime();
+    const dateB = new Date(b.reviewDeadline).getTime();
+    return dateB - dateA;
+  });
 
   return (
     <div className="container mx-auto p-6">
@@ -59,25 +72,25 @@ const ReviewManage = () => {
       </div>
 
       <Card className="p-4 mb-6">
-        <div className="flex gap-4 mb-4">
+        <div className="flex gap-4 mb-4 items-center flex-wrap">
           <Input
             placeholder="Tìm kiếm theo tên bài báo hoặc người phản biện..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-1"
           />
-          <Select
-            value={statusFilter}
-            onValueChange={setStatusFilter}
-            className="w-48"
-          >
-            <option value="all">Tất cả trạng thái</option>
-            <option value="invited">Đã mời</option>
-            <option value="accepted">Đã chấp nhận</option>
-            <option value="declined">Đã từ chối</option>
-            <option value="completed">Đã hoàn thành</option>
-            <option value="expired">Hết hạn</option>
-          </Select>
+          <div className="flex gap-2 flex-wrap">
+            {STATUS_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                className={`px-3 py-1 rounded-full border text-sm font-medium ${statusFilter === opt.value ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-700 border-gray-300"} transition`}
+                onClick={() => setStatusFilter(opt.value)}
+                type="button"
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <Table>
@@ -99,20 +112,20 @@ const ReviewManage = () => {
                   Đang tải...
                 </TableCell>
               </TableRow>
-            ) : filteredReviews.length === 0 ? (
+            ) : sortedReviews.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center">
                   Không tìm thấy phản biện nào
                 </TableCell>
               </TableRow>
             ) : (
-              filteredReviews.map((review) => (
+              sortedReviews.map((review) => (
                 <TableRow key={review._id}>
                   <TableCell>
                     {typeof review.articleId === "object" ? review.articleId.title : "Loading..."}
                   </TableCell>
                   <TableCell>
-                    {typeof review.reviewerId === "object" ? review.reviewerId.fullName : "Loading..."}
+                    {typeof review.reviewerId === "object" ? review.reviewerId.name : "Loading..."}
                   </TableCell>
                   <TableCell>Vòng {review.round}</TableCell>
                   <TableCell>

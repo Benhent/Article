@@ -7,15 +7,6 @@ import useAuthStore from "../../../store/authStore"
 import { Button } from "../../../components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../../../components/ui/card"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "../../../components/ui/dialog"
-import {
   Pagination,
   PaginationContent,
   PaginationItem,
@@ -33,7 +24,6 @@ import type { Article } from "../../../types/article"
 
 // Status badge colors
 const STATUS_COLORS = {
-  draft: "bg-gray-100 text-gray-800",
   submitted: "bg-blue-100 text-blue-800",
   under_review: "bg-yellow-100 text-yellow-800",
   accepted: "bg-green-100 text-green-800",
@@ -44,7 +34,6 @@ const STATUS_COLORS = {
 
 // Status display names
 const STATUS_NAMES = {
-  draft: "Bản nháp",
   submitted: "Đã gửi",
   under_review: "Đang xét duyệt",
   accepted: "Đã chấp nhận",
@@ -55,7 +44,6 @@ const STATUS_NAMES = {
 
 // Status icons
 const STATUS_ICONS = {
-  draft: <FileText className="h-4 w-4" />,
   submitted: <FileUp className="h-4 w-4" />,
   under_review: <Clock className="h-4 w-4" />,
   accepted: <CheckCircle className="h-4 w-4" />,
@@ -95,12 +83,12 @@ const PostArticle = () => {
 
   // Handle view article details
   const handleViewArticle = (id: string) => {
-    navigate(`/articles/${id}`)
+    navigate(`/post-article/${id}`)
   }
 
   // Handle create new article
   const handleCreateArticle = () => {
-    navigate('/admin/articles/create')
+    navigate('/post-article/create')
   }
 
   // Filter articles based on active tab
@@ -163,7 +151,6 @@ const PostArticle = () => {
       <Tabs defaultValue="all" className="mb-6" onValueChange={setActiveTab}>
         <TabsList className="grid grid-cols-4 md:grid-cols-7 mb-4">
           <TabsTrigger value="all">Tất cả</TabsTrigger>
-          <TabsTrigger value="draft">Bản nháp</TabsTrigger>
           <TabsTrigger value="submitted">Đã gửi</TabsTrigger>
           <TabsTrigger value="under_review">Đang xét duyệt</TabsTrigger>
           <TabsTrigger value="revisions_required">Cần chỉnh sửa</TabsTrigger>

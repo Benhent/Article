@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react"
 import { motion } from "framer-motion"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
+import { useNavigate } from "react-router-dom"
 import {
   BookOpen,
   Calendar,
@@ -23,6 +24,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../..
 gsap.registerPlugin(ScrollTrigger)
 
 const Dashboard = () => {
+  const navigate = useNavigate()
   // Refs for each section
   const heroRef = useRef<HTMLDivElement>(null)
   const introRef = useRef<HTMLDivElement>(null)
@@ -561,11 +563,17 @@ const Dashboard = () => {
             Hồng.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <button className="bg-white text-primary hover:bg-opacity-90 px-6 py-3 rounded-lg font-medium flex items-center">
+            <button 
+              onClick={() => navigate('/guide')}
+              className="bg-white text-primary hover:bg-opacity-90 px-6 py-3 rounded-lg font-medium flex items-center"
+            >
               Hướng dẫn gửi bài
               <ChevronDown className="ml-2 h-4 w-4" />
             </button>
-            <button className="bg-white/20 hover:bg-white/30 px-6 py-3 rounded-lg font-medium flex items-center">
+            <button 
+              onClick={() => navigate('/contact')}
+              className="bg-white/20 hover:bg-white/30 px-6 py-3 rounded-lg font-medium flex items-center"
+            >
               Liên hệ Ban biên tập
               <ExternalLink className="ml-2 h-4 w-4" />
             </button>

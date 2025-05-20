@@ -18,12 +18,12 @@ const router = express.Router();
 
 // Protected routes
 router.post('/', verifyToken, authorizeRoles('admin', 'editor'), createReview);
-router.get('/', verifyToken, authorizeRoles('admin', 'editor'), getAllReviews);
+router.get('/', verifyToken, authorizeRoles('admin', 'editor', 'reviewer'), getAllReviews);
 router.post('/multiple', verifyToken, authorizeRoles('admin', 'editor'), createMultipleReviews);
 
 // Single review routes
 router.get('/:id', verifyToken, authorizeRoles('admin', 'editor', 'reviewer'), getReview);
-router.put('/:id', verifyToken, authorizeRoles('admin', 'editor'), updateReview);
+router.put('/:id', verifyToken, authorizeRoles('admin', 'editor', 'reviewer'), updateReview);
 router.delete('/:id', verifyToken, authorizeRoles('admin', 'editor'), deleteReview);
 
 // Review actions

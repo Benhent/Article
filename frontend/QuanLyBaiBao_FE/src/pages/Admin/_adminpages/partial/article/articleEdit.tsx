@@ -24,17 +24,25 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../../../../../components/ui/alert-dialog"
-import { ArrowLeft, FileText, Loader2, Plus, Trash2 } from "lucide-react"
-import { useArticleStore, useFieldStore, useFileStore, useUIStore } from "../../../../../store/rootStore"
+import { ArrowLeft, FileText, Loader2, Plus, Trash2, Eye } from "lucide-react"
+import {
+  useArticleStore,
+  useFieldStore,
+  useFileStore,
+  useUIStore,
+  useAuthorStore,
+} from "../../../../../store/rootStore"
 import { uploadArticleThumbnailToCloudinary, uploadArticleFileToCloudinary } from "../../../../../config/cloudinary"
-import type { ArticleAuthor, Field, ArticleFile } from "../../../../../types/article"
+import apiService from "../../../../../services/api"
+import type { ArticleAuthor, Field } from "../../../../../types/article"
 
 export default function ArticleEdit() {
-  const { articleId } = useParams<{ articleId: string }>()
+  const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { article, fetchArticleById, updateArticle, loading } = useArticleStore()
+  const { article, fetchArticleById, updateArticle, loading} = useArticleStore()
   const { fields, fetchFields } = useFieldStore()
-  const { files, getArticleFiles, deleteArticleFile } = useFileStore()
+  const { deleteArticleFile} = useFileStore()
+  const { createArticleAuthor, updateArticleAuthor, deleteArticleAuthor } = useAuthorStore()
   const { showSuccessToast, showErrorToast } = useUIStore()
 
   // Form state
@@ -47,7 +55,6 @@ export default function ArticleEdit() {
     articleLanguage: "vi",
     field: "",
     secondaryFields: [] as string[],
-    status: "draft",
     authors: [] as ArticleAuthor[],
     submitterNote: "",
   })
@@ -66,6 +73,7 @@ export default function ArticleEdit() {
     institution: "",
     country: "",
     isCorresponding: false,
+    hasAccount: false,
   })
 
   const [tab, setTab] = useState("basic")
@@ -75,12 +83,10 @@ export default function ArticleEdit() {
 
   useEffect(() => {
     fetchFields({ isActive: true })
-
-    if (articleId) {
-      fetchArticleById(articleId)
-      getArticleFiles(articleId)
+    if (id) {
+      fetchArticleById(id)
     }
-  }, [articleId, fetchArticleById, fetchFields, getArticleFiles])
+  }, [id, fetchArticleById, fetchFields])
 
   // Load article data into form
   useEffect(() => {
@@ -96,11 +102,10 @@ export default function ArticleEdit() {
         secondaryFields: Array.isArray(article.secondaryFields)
           ? article.secondaryFields.map((f) => (typeof f === "string" ? f : f._id))
           : [],
-        status: article.status || "draft",
         authors: Array.isArray(article.authors)
           ? article.authors.map((a) =>
               typeof a === "string"
-                ? { fullName: a, email: "", institution: "", country: "", isCorresponding: false }
+                ? { fullName: a, email: "", institution: "", country: "", isCorresponding: false, hasAccount: false }
                 : a,
             )
           : [],
@@ -171,6 +176,7 @@ export default function ArticleEdit() {
       institution: "",
       country: "",
       isCorresponding: false,
+      hasAccount: false,
     })
 
     // Clear author errors
@@ -192,10 +198,26 @@ export default function ArticleEdit() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const selectedFiles = Array.from(e.target.files)
-      // Validate file size (10MB limit)
-      const invalidFiles = selectedFiles.filter((file) => file.size > 10 * 1024 * 1024)
 
-      if (invalidFiles.length > 0) {
+      // Xác thực loại tệp
+      const validTypes = [".pdf", ".doc", ".docx", ".zip"]
+      const invalidTypeFiles = selectedFiles.filter((file) => {
+        const extension = file.name.substring(file.name.lastIndexOf(".")).toLowerCase()
+        return !validTypes.includes(extension)
+      })
+
+      if (invalidTypeFiles.length > 0) {
+        setFormErrors((prev) => ({
+          ...prev,
+          files: "Chỉ chấp nhận các tệp PDF, DOC, DOCX, hoặc ZIP",
+        }))
+        return
+      }
+
+      // Xác thực kích thước tệp (10MB limit)
+      const invalidSizeFiles = selectedFiles.filter((file) => file.size > 10 * 1024 * 1024)
+
+      if (invalidSizeFiles.length > 0) {
         setFormErrors((prev) => ({
           ...prev,
           files: "Một số tệp vượt quá giới hạn 10MB",
@@ -205,12 +227,12 @@ export default function ArticleEdit() {
 
       setNewFiles((prev) => [...prev, ...selectedFiles])
 
-      // Clear file error if exists
+      // Xóa lỗi nếu có
       if (formErrors.files) {
         setFormErrors((prev) => ({ ...prev, files: "" }))
       }
 
-      // Reset input value to allow selecting the same file again
+      // Reset giá trị input để cho phép chọn lại cùng một tệp
       e.target.value = ""
     }
   }
@@ -220,9 +242,19 @@ export default function ArticleEdit() {
   }
 
   const handleDeleteExistingFile = async (fileId: string) => {
-    if (articleId) {
-      await deleteArticleFile(fileId)
-      await getArticleFiles(articleId)
+    if (fileId) {
+      try {
+        await deleteArticleFile(fileId)
+        showSuccessToast("Đã xóa tệp thành công")
+
+        // Cập nhật lại thông tin bài báo sau khi xóa tệp
+        if (id) {
+          await fetchArticleById(id)
+        }
+      } catch (error) {
+        console.error("Error deleting file:", error)
+        showErrorToast("Lỗi khi xóa tệp")
+      }
     }
   }
 
@@ -254,13 +286,13 @@ export default function ArticleEdit() {
   const validateForm = () => {
     const errors: Record<string, string> = {}
 
-    // Required fields
-    if (!form.title) errors.title = "Tiêu đề là bắt buộc"
-    if (!form.abstract) errors.abstract = "Tóm tắt là bắt buộc"
-    if (!form.keywords) errors.keywords = "Từ khóa là bắt buộc"
+    // Xác thực các trường bắt buộc
+    if (!form.title.trim()) errors.title = "Tiêu đề là bắt buộc"
+    if (!form.abstract.trim()) errors.abstract = "Tóm tắt là bắt buộc"
+    if (!form.keywords.trim()) errors.keywords = "Từ khóa là bắt buộc"
     if (!form.field) errors.field = "Lĩnh vực chính là bắt buộc"
 
-    // Validate authors
+    // Xác thực tác giả
     if (form.authors.length === 0) {
       errors.authors = "Cần ít nhất một tác giả"
     }
@@ -272,7 +304,7 @@ export default function ArticleEdit() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!articleId) return
+    if (!id) return
 
     if (!validateForm()) {
       // Scroll to first error
@@ -287,31 +319,18 @@ export default function ArticleEdit() {
     setIsSubmitting(true)
 
     try {
-      // 1. Update article
+      // 1. Chuẩn bị dữ liệu bài báo
       const keywordsArr = form.keywords
         .split(",")
         .map((k) => k.trim())
         .filter(Boolean)
-      const data = {
-        ...form,
-        keywords: keywordsArr,
-      }
 
-      await updateArticle(articleId, data)
-
-      // 2. Upload thumbnail if exists
+      // 2. Xử lý thumbnail nếu có
+      let thumbnailUrl = article?.thumbnail || ""
       if (thumbnail) {
         setUploadingThumbnail(true)
         try {
-          const thumbnailUrl = await uploadArticleThumbnailToCloudinary(thumbnail)
-          await fetch(`/api/articles/${articleId}/thumbnail`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-            body: JSON.stringify({ thumbnail: thumbnailUrl }),
-          })
+          thumbnailUrl = await uploadArticleThumbnailToCloudinary(thumbnail)
         } catch (error) {
           console.error("Error uploading thumbnail:", error)
           showErrorToast("Lỗi khi tải lên ảnh thu nhỏ")
@@ -320,37 +339,117 @@ export default function ArticleEdit() {
         }
       }
 
-      // 3. Upload new files if exist
+      // 3. Cập nhật thông tin bài báo sử dụng store
+      const data = {
+        titlePrefix: form.titlePrefix,
+        title: form.title,
+        subtitle: form.subtitle,
+        abstract: form.abstract,
+        keywords: keywordsArr,
+        articleLanguage: form.articleLanguage,
+        field: form.field,
+        secondaryFields: form.secondaryFields,
+        submitterNote: form.submitterNote,
+        thumbnail: thumbnailUrl,
+      }
+      await updateArticle(id, data)
+
+      // 4. Xử lý tác giả
+      // Xóa tác giả cũ nếu cần
+      if (article?.authors && Array.isArray(article.authors)) {
+        for (const author of article.authors) {
+          if (typeof author === "object" && author._id) {
+            // Kiểm tra xem tác giả này có còn trong danh sách mới không
+            const stillExists = form.authors.some(
+              (a) => (a._id && a._id === author._id) || (a.email === author.email && a.fullName === author.fullName),
+            )
+
+            if (!stillExists) {
+              try {
+                await deleteArticleAuthor(author._id)
+              } catch (error) {
+                console.error("Error deleting author:", error)
+              }
+            }
+          }
+        }
+      }
+
+      // Thêm hoặc cập nhật tác giả mới
+      for (let i = 0; i < form.authors.length; i++) {
+        const author = form.authors[i]
+
+        if (author._id) {
+          // Cập nhật tác giả hiện có
+          await updateArticleAuthor(author._id, {
+            ...author,
+            order: i + 1,
+          })
+        } else {
+          // Tạo tác giả mới
+          await createArticleAuthor({
+            articleId: id,
+            fullName: author.fullName,
+            email: author.email,
+            institution: author.institution || "",
+            country: author.country || "",
+            isCorresponding: author.isCorresponding || false,
+            hasAccount: author.hasAccount || false,
+            order: i + 1,
+          })
+        }
+      }
+
+      // 5. Xử lý tệp đính kèm mới nếu có
       if (newFiles.length > 0) {
         setUploadingFiles(true)
         try {
+          // Nếu có file cũ, xóa trước
+          if (article?.articleFile) {
+            await deleteArticleFile(article.articleFile._id)
+          }
+
+          // Upload file mới lên Cloudinary
           for (const file of newFiles) {
-            const fileData = await uploadArticleFileToCloudinary(file)
-            await fetch(`/api/article-files/${articleId}/upload`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-              },
-              body: JSON.stringify({
-                articleId,
-                fileCategory: "main",
+            try {
+              const cloudinaryData = await uploadArticleFileToCloudinary(file);
+
+              // Tạo bản ghi file trên server
+              const fileResponse = await apiService.post(`/files/${id}`, {
+                articleId: id,
+                fileCategory: "manuscript",
                 round: 1,
-                ...fileData,
-              }),
-            })
+                fileName: cloudinaryData.fileName || file.name,
+                originalName: file.name,
+                fileType: file.type,
+                fileSize: file.size,
+                fileUrl: cloudinaryData.fileUrl,
+                filePath: cloudinaryData.fileUrl
+              });
+
+              // Cập nhật article với file reference
+              await apiService.put(`/articles/${id}/update`, {
+                articleFile: (fileResponse.data as { _id: string })._id
+              });
+            } catch (uploadError) {
+              console.error("Error uploading file:", uploadError)
+              showErrorToast(`Lỗi khi tải lên tệp ${file.name}`)
+            }
           }
         } catch (error) {
-          console.error("Error uploading files:", error)
-          showErrorToast("Lỗi khi tải lên tệp đính kèm")
+          console.error("Error handling files:", error)
+          showErrorToast("Lỗi khi xử lý tệp đính kèm")
         } finally {
           setUploadingFiles(false)
         }
       }
 
+      // 6. Tải lại thông tin bài báo để cập nhật UI
+      await fetchArticleById(id)
+
       showSuccessToast("Cập nhật bài báo thành công")
-      // 4. Navigate to article detail
-      navigate(`/admin/articles/${articleId}`)
+      // 7. Chuyển hướng đến trang chi tiết bài báo
+      navigate(`/admin/articles/${id}`)
     } catch (error) {
       console.error("Error updating article:", error)
       showErrorToast("Lỗi khi cập nhật bài báo")
@@ -370,7 +469,7 @@ export default function ArticleEdit() {
 
   return (
     <div className="container mx-auto py-8">
-      <Button variant="ghost" onClick={() => navigate(`/admin/articles/${articleId}`)} className="flex items-center">
+      <Button variant="ghost" onClick={() => navigate(`/admin/articles/${id}`)} className="flex items-center">
         <ArrowLeft className="mr-2 h-4 w-4" /> Quay lại
       </Button>
 
@@ -460,21 +559,6 @@ export default function ArticleEdit() {
                       <SelectContent>
                         <SelectItem value="vi">Tiếng Việt</SelectItem>
                         <SelectItem value="en">Tiếng Anh</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="status">Trạng thái</Label>
-                    <Select value={form.status} onValueChange={(v) => setForm((f) => ({ ...f, status: v }))}>
-                      <SelectTrigger id="status">
-                        <SelectValue placeholder="Chọn trạng thái" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="draft">Bản nháp</SelectItem>
-                        <SelectItem value="under_review">Đang xét duyệt</SelectItem>
-                        <SelectItem value="published">Đã xuất bản</SelectItem>
-                        <SelectItem value="rejected">Từ chối</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -699,88 +783,85 @@ export default function ArticleEdit() {
                     {formErrors.files && <p className="text-red-500 text-sm">{formErrors.files}</p>}
                   </div>
 
-                  {files.length === 0 ? (
-                    <div className="text-gray-400 mb-4">Chưa có tệp đính kèm nào</div>
-                  ) : (
+                  {article?.articleFile ? (
                     <div className="space-y-2 mb-6">
-                      {files.map((file: ArticleFile) => (
-                        <div key={file._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                          <div className="flex items-center">
-                            <FileText className="h-5 w-5 mr-2 text-gray-500" />
-                            <div>
-                              <div className="font-medium">{file.fileName}</div>
-                              <div className="text-xs text-gray-500">
-                                {(file.fileSize / 1024 / 1024).toFixed(2)} MB •
-                                {new Date(file.createdAt).toLocaleDateString("vi-VN")}
-                              </div>
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                        <div className="flex items-center">
+                          <FileText className="h-5 w-5 mr-2 text-gray-500" />
+                          <div>
+                            <div className="font-medium">{article.articleFile.fileName}</div>
+                            <div className="text-xs text-gray-500">
+                              {(article.articleFile.fileSize / 1024 / 1024).toFixed(2)} MB •
+                              {new Date(article.articleFile.createdAt).toLocaleDateString("vi-VN")}
                             </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button variant="ghost" size="sm" asChild>
-                              <a href={file.fileUrl} target="_blank" rel="noopener noreferrer">
-                                Xem
-                              </a>
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm" className="text-red-500">
-                                  Xóa
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Xác nhận xóa</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Bạn có chắc chắn muốn xóa tệp này? Hành động này không thể hoàn tác.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Hủy</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDeleteExistingFile(file._id)}>
-                                    Xóa
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="mt-6">
-                    <Label>Tải lên tệp mới</Label>
-
-                    {newFiles.length > 0 && (
-                      <div className="space-y-2 mt-2 mb-4">
-                        {newFiles.map((file, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                            <div className="flex items-center">
-                              <FileText className="h-5 w-5 mr-2 text-gray-500" />
-                              <div>
-                                <div className="font-medium">{file.name}</div>
-                                <div className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</div>
-                              </div>
-                            </div>
-                            <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveNewFile(idx)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="sm" asChild>
+                            <a href={article.articleFile.fileUrl} target="_blank" rel="noopener noreferrer">
+                              <Eye className="h-4 w-4" /> Xem
+                            </a>
+                          </Button>
+                          <Button variant="ghost" size="sm" asChild>
+                            <a href={article.articleFile.fileUrl} download>
+                              Download
+                            </a>
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="text-red-500">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Xác nhận xóa</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Bạn có chắc chắn muốn xóa tệp này? Hành động này không thể hoàn tác.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Hủy</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteExistingFile(article.articleFile._id)}>
+                                  Xóa
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </div>
-                    )}
-
-                    <div className="mt-4">
+                    </div>
+                  ) : (
+                    <div className="mt-6">
+                      <Label>Tải lên tệp mới</Label>
                       <Input
                         id="files"
                         type="file"
                         accept=".pdf,.doc,.docx,.zip"
-                        multiple
+                        multiple={false}
                         onChange={handleFileChange}
                       />
                       <p className="text-xs text-gray-500 mt-1">PDF, DOCX, ZIP (tối đa 10MB mỗi tệp)</p>
+                      {newFiles.length > 0 && (
+                        <div className="space-y-2 mt-2 mb-4">
+                          {newFiles.map((file, idx) => (
+                            <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                              <div className="flex items-center">
+                                <FileText className="h-5 w-5 mr-2 text-gray-500" />
+                                <div>
+                                  <div className="font-medium">{file.name}</div>
+                                  <div className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</div>
+                                </div>
+                              </div>
+                              <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveNewFile(idx)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  </div>
+                  )}
 
                   <AlertDialog>
                     <div className="flex justify-between mt-6">

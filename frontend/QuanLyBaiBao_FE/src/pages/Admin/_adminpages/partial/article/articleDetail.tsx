@@ -1,8 +1,6 @@
-"use client"
-
 import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { useArticleStore, useReviewStore, useIssueStore, useUIStore } from "../../../../../store/rootStore"
+import { useArticleStore, useReviewStore, useIssueStore, useUIStore, useAuthStore } from "../../../../../store/rootStore"
 import { Button } from "../../../../../components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../../components/ui/tabs"
 import { Badge } from "../../../../../components/ui/badge"
@@ -33,18 +31,24 @@ import { Input } from "../../../../../components/ui/input"
 import { ArrowLeft, Download, Edit, Eye, FileText, Trash2, Upload, UserPlus, Send, Clock } from "lucide-react"
 import LoadingSpinner from "../../../../../components/LoadingSpinner"
 import type { Review, Issue } from "../../../../../types/article"
+import apiService from "../../../../../services/api"
+import { Label } from "../../../../../components/ui/label"
+import { format } from "date-fns"
+import { vi } from "date-fns/locale"
+import { CalendarIcon } from "lucide-react"
+import { Calendar } from "../../../../../components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "../../../../../components/ui/popover"
+import { cn } from "../../../../../lib/utils"
 
 const statusColor: Record<string, string> = {
   published: "bg-green-500 text-white",
   under_review: "bg-blue-500 text-white",
-  draft: "bg-gray-500 text-white",
   rejected: "bg-red-500 text-white",
 }
 
 const statusLabels: Record<string, string> = {
   published: "Đã xuất bản",
   under_review: "Đang xét duyệt",
-  draft: "Bản nháp",
   rejected: "Từ chối",
 }
 
@@ -54,6 +58,7 @@ export default function ArticleDetail() {
   const { reviews, fetchReviews, createReview } = useReviewStore()
   const { issues, fetchIssues } = useIssueStore()
   const { showSuccessToast, showErrorToast } = useUIStore()
+  const { checkEmailExists, getUserByEmail } = useAuthStore()
   const navigate = useNavigate()
 
   const [tab, setTab] = useState("overview")
@@ -67,6 +72,7 @@ export default function ArticleDetail() {
   })
   const [reviewerEmail, setReviewerEmail] = useState("")
   const [reviewDeadline, setReviewDeadline] = useState("")
+  const [previewFile, setPreviewFile] = useState<{ url: string; type: string } | null>(null)
 
   useEffect(() => {
     if (id) {
@@ -107,7 +113,9 @@ export default function ArticleDetail() {
         pageEnd: Number(publishData.pageEnd) || undefined,
         issueId: publishData.issueId || undefined,
       })
-    } catch (error) {
+    } catch (error: any) {
+      const message = error?.response?.data?.message || 'Không thể xuất bản bài báo. Vui lòng kiểm tra lại trạng thái và thông tin.'
+      showErrorToast(message)
       console.error("Error publishing article:", error)
     }
   }
@@ -129,14 +137,31 @@ export default function ArticleDetail() {
     }
 
     try {
-      // Normally you would validate the email and check if the user exists
-      // For simplicity, we'll just create the review invitation
+      // 1. Kiểm tra email có tồn tại không
+      const emailCheck = await checkEmailExists(reviewerEmail)
+      if (!emailCheck) {
+        showErrorToast("Email không tồn tại trong hệ thống")
+        return
+      }
+
+      // 2. Lấy user theo email từ store
+      const user = await getUserByEmail(reviewerEmail)
+      if (!user) {
+        showErrorToast("Không tìm thấy người dùng với email này")
+        return
+      }
+      if (user.role !== "reviewer") {
+        showErrorToast("Người dùng này không phải là reviewer")
+        return
+      }
+
+      // 3. Tạo review với _id của user
       const responseDeadline = new Date()
-      responseDeadline.setDate(responseDeadline.getDate() + 7) // 7 days to respond
+      responseDeadline.setDate(responseDeadline.getDate() + 7)
 
       await createReview({
         articleId: id,
-        reviewerId: reviewerEmail,
+        reviewerId: user._id,
         responseDeadline: responseDeadline.toISOString(),
         reviewDeadline,
         status: "pending",
@@ -178,9 +203,10 @@ export default function ArticleDetail() {
     return issue ? `${issue.title} (Tập ${issue.volumeNumber}, Số ${issue.issueNumber})` : "Không tìm thấy số"
   }
 
-  const getReviewerName = (reviewer: string | { _id: string; fullName: string; email: string }) => {
-    if (typeof reviewer === "string") return reviewer
-    return `${reviewer.fullName} (${reviewer.email})`
+  const getReviewerName = (reviewer: string | { _id: string; name?: string; fullName?: string; email: string }) => {
+    if (typeof reviewer === "string") return reviewer;
+    // Ưu tiên fullName, nếu không có thì lấy name, nếu không có thì fallback "No Name"
+    return `${reviewer.fullName || reviewer.name || "No Name"} (${reviewer.email})`;
   }
 
   const getReviewStatusLabel = (status: string) => {
@@ -193,6 +219,11 @@ export default function ArticleDetail() {
     return statusMap[status] || { label: status, color: "bg-gray-500" }
   }
 
+  const getUserDisplayName = (user: string | { name?: string; fullName?: string; email?: string }) => {
+    if (typeof user === "string") return user;
+    return user?.name || user?.fullName || user?.email || "No Name";
+  }
+
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
@@ -200,106 +231,6 @@ export default function ArticleDetail() {
           <ArrowLeft className="mr-2 h-4 w-4" /> Quay lại danh sách
         </Button>
         <div className="flex gap-2">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline">Thay đổi trạng thái</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Thay đổi trạng thái bài báo</DialogTitle>
-                <DialogDescription>Chọn trạng thái mới và nhập lý do (nếu cần)</DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <Select value={newStatus} onValueChange={setNewStatus}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn trạng thái mới" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Bản nháp</SelectItem>
-                    <SelectItem value="under_review">Đang xét duyệt</SelectItem>
-                    <SelectItem value="published">Đã xuất bản</SelectItem>
-                    <SelectItem value="rejected">Từ chối</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Textarea
-                  placeholder="Lý do thay đổi trạng thái (tùy chọn)"
-                  value={statusReason}
-                  onChange={(e) => setStatusReason(e.target.value)}
-                />
-              </div>
-              <DialogFooter>
-                <Button onClick={handleStatusChange}>Lưu thay đổi</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          {article.status !== "published" && (
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline">Xuất bản</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Xuất bản bài báo</DialogTitle>
-                  <DialogDescription>Nhập thông tin xuất bản cho bài báo</DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div>
-                    <label className="text-sm font-medium">DOI</label>
-                    <Input
-                      placeholder="Nhập DOI"
-                      value={publishData.doi}
-                      onChange={(e) => setPublishData({ ...publishData, doi: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Số</label>
-                    <Select
-                      value={publishData.issueId}
-                      onValueChange={(value) => setPublishData({ ...publishData, issueId: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn số" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {issues &&
-                          issues.length > 0 &&
-                          issues.map((issue: Issue) => (
-                            <SelectItem key={issue._id} value={issue._id}>
-                              {issue.title} (Tập {issue.volumeNumber}, Số {issue.issueNumber})
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium">Trang bắt đầu</label>
-                      <Input
-                        type="number"
-                        placeholder="Trang bắt đầu"
-                        value={publishData.pageStart}
-                        onChange={(e) => setPublishData({ ...publishData, pageStart: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Trang kết thúc</label>
-                      <Input
-                        type="number"
-                        placeholder="Trang kết thúc"
-                        value={publishData.pageEnd}
-                        onChange={(e) => setPublishData({ ...publishData, pageEnd: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button onClick={handlePublish}>Xuất bản</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          )}
-
           <Button onClick={() => navigate(`/admin/articles/${article._id}/edit`)}>
             <Edit className="mr-2 h-4 w-4" /> Chỉnh sửa
           </Button>
@@ -435,18 +366,25 @@ export default function ArticleDetail() {
                         {article.authors.map((author, idx) => (
                           <Card key={idx}>
                             <CardContent className="p-4">
-                              <div className="font-semibold">
-                                {typeof author === "string" ? author : author.fullName}
-                                {typeof author !== "string" && author.isCorresponding && (
-                                  <Badge className="ml-2 bg-blue-500">Tác giả liên hệ</Badge>
-                                )}
-                              </div>
-                              {typeof author !== "string" && (
+                              {typeof author === "string" ? (
+                                <div className="font-semibold">{author}</div>
+                              ) : (
                                 <>
+                                  <div className="font-semibold">
+                                    {author.fullName}
+                                    {author.isCorresponding && (
+                                      <Badge className="ml-2 bg-blue-500">Tác giả liên hệ</Badge>
+                                    )}
+                                  </div>
                                   <div className="text-sm text-gray-600">{author.email}</div>
                                   <div className="text-sm text-gray-600">
-                                    {author.institution}{author.institution && author.country ? ", " : ""}{author.country}
+                                    {author.institution}
+                                    {author.institution && author.country ? ", " : ""}
+                                    {author.country}
                                   </div>
+                                  {author.orcid && (
+                                    <div className="text-sm text-gray-600">ORCID: {author.orcid}</div>
+                                  )}
                                 </>
                               )}
                             </CardContent>
@@ -463,46 +401,60 @@ export default function ArticleDetail() {
                   <div>
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="font-semibold text-lg">Tệp đính kèm</h3>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/admin/articles/${article._id}/edit`)}
-                      >
-                        <Upload className="mr-2 h-4 w-4" /> Tải lên tệp mới
-                      </Button>
                     </div>
 
-                    {Array.isArray(article.files) && article.files.length > 0 ? (
+                    {article.articleFile ? (
                       <div className="space-y-2">
-                        {article.files.map((file) => (
-                          <div key={file._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                            <div className="flex items-center">
-                              <FileText className="h-5 w-5 mr-2 text-gray-500" />
-                              <div>
-                                <div className="font-medium">{file.fileName}</div>
-                                <div className="text-xs text-gray-500">
-                                  {(file.fileSize / 1024 / 1024).toFixed(2)} MB •
-                                  {new Date(file.createdAt).toLocaleDateString("vi-VN")}
-                                </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                          <div className="flex items-center">
+                            <FileText className="h-5 w-5 mr-2 text-gray-500" />
+                            <div>
+                              <div className="font-medium">{article.articleFile.fileName}</div>
+                              <div className="text-xs text-gray-500">
+                                {(article.articleFile.fileSize / 1024 / 1024).toFixed(2)} MB •
+                                {new Date(article.articleFile.createdAt).toLocaleDateString("vi-VN")}
                               </div>
                             </div>
-                            <div className="flex gap-2">
-                              <Button variant="ghost" size="sm" asChild>
-                                <a href={file.fileUrl} target="_blank" rel="noopener noreferrer">
-                                  <Eye className="h-4 w-4" />
-                                </a>
-                              </Button>
-                              <Button variant="ghost" size="sm" asChild>
-                                <a href={file.fileUrl} download>
-                                  <Download className="h-4 w-4" />
-                                </a>
-                              </Button>
-                            </div>
                           </div>
-                        ))}
+                          <div className="flex gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => setPreviewFile({ url: article.articleFile.fileUrl, type: article.articleFile.fileType })}>
+                              <Eye className="h-4 w-4" /> Xem
+                            </Button>
+                            <Button variant="ghost" size="sm" asChild>
+                              <a href={article.articleFile.fileUrl} download>
+                                <Download className="h-4 w-4" />
+                              </a>
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                     ) : (
                       <div className="text-gray-500">Không có tệp đính kèm</div>
+                    )}
+
+                    {/* Modal xem trước file */}
+                    {previewFile && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                        <div className="bg-white rounded shadow-lg max-w-3xl w-full p-4 relative">
+                          <button onClick={() => setPreviewFile(null)} className="absolute top-2 right-2 text-red-500 font-bold">Đóng</button>
+                          <div className="mt-4">
+                            {previewFile.type === "application/pdf" ? (
+                              <iframe src={previewFile.url} width="100%" height="600px" title="PDF preview" />
+                            ) : previewFile.type.includes("word") || previewFile.type.includes("doc") || previewFile.url.endsWith(".doc") || previewFile.url.endsWith(".docx") ? (
+                              <iframe
+                                src={`https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(previewFile.url)}`}
+                                width="100%"
+                                height="600px"
+                                title="DOC preview"
+                              />
+                            ) : previewFile.type.startsWith("image/") ? (
+                              <img src={previewFile.url} alt="Preview" style={{ maxWidth: "100%", maxHeight: 600 }} />
+                            ) : (
+                              <div className="text-center text-gray-500">Không hỗ trợ xem trước file này.</div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </TabsContent>
@@ -557,20 +509,6 @@ export default function ArticleDetail() {
                               <div>
                                 <div className="font-medium">{getReviewerName(review.reviewerId)}</div>
                                 <Badge className={`${status.color} mt-1`}>{status.label}</Badge>
-                              </div>
-                              <div className="flex gap-2">
-                                {review.status === "pending" && (
-                                  <Button size="sm" variant="outline" onClick={() => handleSendReminder(review._id)}>
-                                    <Send className="mr-2 h-4 w-4" /> Nhắc nhở
-                                  </Button>
-                                )}
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => navigate(`/admin/reviews/${review._id}`)}
-                                >
-                                  <Eye className="mr-2 h-4 w-4" /> Chi tiết
-                                </Button>
                               </div>
                             </div>
                             <div className="mt-2 text-sm text-gray-500 flex items-center">
@@ -645,13 +583,20 @@ export default function ArticleDetail() {
                     {article.statusHistory.map((history, idx) => (
                       <div key={idx} className="text-sm border-l-2 border-gray-300 pl-3 py-1">
                         <div className="font-medium">
-                          {typeof history === "string" ? history : `${statusLabels[history.status] || history.status}`}
+                          {typeof history === "string"
+                            ? history
+                            : `${statusLabels[history.status] || history.status}`}
                         </div>
                         {typeof history !== "string" && (
                           <>
                             <div className="text-gray-500">
                               {history.timestamp ? new Date(history.timestamp).toLocaleDateString("vi-VN") : ""}
                             </div>
+                            {history.changedBy && (
+                              <div className="text-gray-600 mt-1">
+                                Người thay đổi: {getUserDisplayName(history.changedBy)}
+                              </div>
+                            )}
                             {history.reason && <div className="text-gray-600 mt-1">{history.reason}</div>}
                           </>
                         )}

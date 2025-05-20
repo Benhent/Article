@@ -52,6 +52,7 @@ interface AuthState {
     avatarFile: File | null
   ) => Promise<void>;
   fetchUsers: () => Promise<void>;
+  getUserByEmail: (email: string) => Promise<User | null>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -283,6 +284,15 @@ export const useAuthStore = create<AuthState>((set) => ({
         isLoading: false 
       });
       throw error;
+    }
+  },
+
+  getUserByEmail: async (email: string): Promise<User | null> => {
+    try {
+      const response = await axios.post<{ success: boolean; user: User }>(`${API_URL}/user-by-email`, { email });
+      return response.data.user;
+    } catch (error) {
+      return null;
     }
   },
 

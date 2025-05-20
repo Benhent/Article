@@ -54,7 +54,7 @@ export interface Article {
     statusHistory: StatusHistory[] | string[]
     field: { _id: string; name: string } | string
     secondaryFields?: { _id: string; name: string }[] | string[]
-    submitterId: { _id: string; fullName: string; email: string; institution?: string; country?: string } | string
+    submitterId: { _id: string; name: string; email: string; institution?: string; country?: string } | string
     editorId?: { _id: string; fullName: string; email: string } | string
     createdAt: string
     updatedAt: string
@@ -64,7 +64,7 @@ export interface Article {
     pageStart?: number
     pageEnd?: number
     submitterNote?: string
-    files?: ArticleFile[]
+    articleFile: ArticleFile
 }
   
 export interface Issue {
@@ -97,7 +97,7 @@ export interface Field {
 export interface Review {
     _id: string
     articleId: string | Article
-    reviewerId: string | { _id: string; fullName: string; email: string }
+    reviewerId: string | { _id: string; name: string; email: string }
     status: string
     responseDeadline: string
     reviewDeadline: string

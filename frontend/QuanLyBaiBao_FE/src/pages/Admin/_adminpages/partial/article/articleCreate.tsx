@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 
 import { useState, useEffect } from "react"
@@ -239,34 +237,27 @@ export default function ArticleCreate() {
     return Object.keys(errors).length === 0
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!validateForm()) {
-      // Scroll to first error
-      const firstError = Object.keys(formErrors)[0]
-      const element = document.getElementById(firstError)
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth" })
-      }
-      return
-    }
-
-    setIsSubmitting(true)
-
+  const handleSubmit = async () => {
     try {
+      if (!validateForm()) {
+        showErrorToast("Vui lòng kiểm tra lại thông tin bắt buộc!");
+        return;
+      }
+
+      setIsSubmitting(true);
+
       // 1. Upload thumbnail if exists
-      let thumbnailUrl = ""
+      let thumbnailUrl = "";
       if (thumbnail) {
-        setUploadingThumbnail(true)
+        setUploadingThumbnail(true);
         try {
-          thumbnailUrl = await uploadArticleThumbnailToCloudinary(thumbnail)
+          thumbnailUrl = await uploadArticleThumbnailToCloudinary(thumbnail);
         } catch (error) {
-          console.error("Error uploading thumbnail:", error)
-          showErrorToast("Lỗi khi tải lên ảnh thu nhỏ")
-          return
+          console.error("Error uploading thumbnail:", error);
+          showErrorToast("Lỗi khi tải lên ảnh thu nhỏ");
+          return;
         } finally {
-          setUploadingThumbnail(false)
+          setUploadingThumbnail(false);
         }
       }
 
@@ -274,25 +265,32 @@ export default function ArticleCreate() {
       const keywordsArr = form.keywords
         .split(",")
         .map((k) => k.trim())
-        .filter(Boolean)
+        .filter(Boolean);
       const articleData = {
         ...form,
         keywords: keywordsArr,
         thumbnail: thumbnailUrl,
         status: "submitted", // Set default status to submitted
-      }
+      };
 
-      const newArticleId = await createArticle(articleData)
+      let newArticleId;
+      try {
+        newArticleId = await createArticle(articleData);
+      } catch (error: any) {
+        showErrorToast(error.message || "Lỗi khi tạo bài báo");
+        return;
+      }
+      
       if (!newArticleId) {
-        showErrorToast("Lỗi khi tạo bài báo")
-        return
+        showErrorToast("Lỗi khi tạo bài báo");
+        return;
       }
 
       // 3. Upload manuscript if exists
       if (manuscript) {
-        setUploadingManuscript(true)
+        setUploadingManuscript(true);
         try {
-          const cloudinaryData = await uploadArticleFileToCloudinary(manuscript)
+          const cloudinaryData = await uploadArticleFileToCloudinary(manuscript);
           
           // Create article file record
           const fileResponse = await apiService.post<ArticleFile>(`/files/${newArticleId}`, {
@@ -305,33 +303,37 @@ export default function ArticleCreate() {
             fileSize: manuscript.size,
             fileUrl: cloudinaryData.fileUrl,
             filePath: cloudinaryData.fileUrl
-          })
+          });
 
           // Update article with file reference
           await apiService.put<Article>(`/articles/${newArticleId}/update`, {
             articleFile: fileResponse.data._id
-          })
+          });
 
         } catch (error) {
-          console.error("Error uploading manuscript:", error)
-          showErrorToast("Lỗi khi tải lên bản thảo")
-          return
+          console.error("Error uploading manuscript:", error);
+          showErrorToast("Lỗi khi tải lên bản thảo");
+          return;
         } finally {
-          setUploadingManuscript(false)
+          setUploadingManuscript(false);
         }
       }
 
-      showSuccessToast("Tạo bài báo thành công")
-      navigate("/admin/articles")
+      showSuccessToast("Tạo bài báo thành công");
+      navigate("/admin/articles");
     } catch (error) {
-      console.error("Error creating article:", error)
-      showErrorToast("Lỗi khi tạo bài báo")
+      console.error("Error creating article:", error);
+      showErrorToast("Lỗi khi tạo bài báo");
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
-  const isLoading = isSubmitting || uploadingThumbnail || uploadingManuscript || loading.createArticle
+  const handleConfirmCreate = async () => {
+    await handleSubmit();
+  };
+
+  const isLoading = isSubmitting || uploadingThumbnail || uploadingManuscript || loading.createArticle;
 
   return (
     <div className="container mx-auto py-8">
@@ -738,7 +740,7 @@ export default function ArticleCreate() {
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Hủy</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleSubmit}>Xác nhận</AlertDialogAction>
+                        <AlertDialogAction onClick={handleConfirmCreate}>Xác nhận</AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>

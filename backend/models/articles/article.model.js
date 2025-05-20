@@ -15,6 +15,11 @@ const ArticleSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  slug: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
   subtitle: {
     type: String,
     trim: true
@@ -70,7 +75,6 @@ const ArticleSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: [
-      'draft',
       'submitted',
       'underReview',
       'revisionRequired',
@@ -79,7 +83,7 @@ const ArticleSchema = new mongoose.Schema({
       'rejected',
       'published'
     ],
-    default: 'draft'
+    default: 'submitted'
   },
   statusHistory: [{
     type: Schema.Types.ObjectId,
@@ -202,6 +206,13 @@ ArticleSchema.pre('save', function(next) {
     } else if (currentStatus === 'published' && !this.publishedDate) {
       this.publishedDate = new Date();
     }
+  }
+  if (this.isModified('title')) {
+    // Tạo slug từ title
+    this.slug = this.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
   }
   next();
 });

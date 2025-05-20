@@ -30,9 +30,8 @@ import { CalendarIcon, Search, Filter, ChevronDown, ChevronUp } from "lucide-rea
 import { format } from "date-fns"
 import { Card, CardContent } from "../../../components/ui/card"
 import { Badge } from "../../../components/ui/badge"
-import { Separator } from "../../../components/ui/separator"
 import { cn } from "../../../lib/utils"
-import ArticleDetail from "./partial/ArticleDetail"
+import ArticleDetail from "./partial/Article/Articledetail"
 
 const ArticlePage: React.FC = () => {
   const { articles = [], fetchArticles, fetchArticleById, article, pagination } = useArticleStore()

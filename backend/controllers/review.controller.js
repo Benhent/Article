@@ -201,6 +201,12 @@ export const acceptReview = async (req, res) => {
 
     await review.accept();
 
+    // Update article status to underReview if not already
+    const article = await Article.findById(review.articleId);
+    if (article && article.status !== 'underReview' && article.status !== 'accepted' && article.status !== 'rejected') {
+      await article.changeStatus('underReview', req.user.id, 'Reviewer accepted invitation');
+    }
+
     // Send email notification to editor
     // TODO: Implement email notification
 
@@ -310,6 +316,23 @@ export const completeReview = async (req, res) => {
     }
 
     await review.complete(recommendation, commentsForAuthor, commentsForEditor);
+
+    // Update article status based on recommendation
+    const article = await Article.findById(review.articleId);
+    if (article) {
+      let newStatus = null;
+      let reason = `Review completed with recommendation: ${recommendation}`;
+      if (recommendation === 'accept') {
+        newStatus = 'accepted';
+      } else if (['minorRevision', 'majorRevision', 'resubmit'].includes(recommendation)) {
+        newStatus = 'revisionRequired';
+      } else if (['reject', 'rejectSuggestElsewhere'].includes(recommendation)) {
+        newStatus = 'rejected';
+      }
+      if (newStatus && article.status !== newStatus) {
+        await article.changeStatus(newStatus, req.user.id, reason);
+      }
+    }
 
     // Send email notification to editor
     // TODO: Implement email notification

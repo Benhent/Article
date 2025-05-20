@@ -47,14 +47,12 @@ import type { Article, Field } from "../../../types/article"
 const statusColor: Record<string, string> = {
   published: "bg-green-500 text-white",
   under_review: "bg-blue-500 text-white",
-  draft: "bg-gray-500 text-white",
   rejected: "bg-red-500 text-white",
 }
 
 const statusLabels: Record<string, string> = {
   published: "Đã xuất bản",
   under_review: "Đang xét duyệt",
-  draft: "Bản nháp",
   rejected: "Từ chối",
 }
 
@@ -119,29 +117,6 @@ export default function ArticleManage() {
     setSelectedIssue("")
   }
 
-  const confirmAddToIssue = async () => {
-    if (!selectedArticle || !selectedIssue) return
-
-    try {
-      // Implement the logic to add article to issue
-      // This would typically call a function from issueStore
-      await fetch(`/api/issues/${selectedIssue}/add-article`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({ articleId: selectedArticle._id }),
-      })
-
-      // Refresh the articles list
-      handleApplyFilters()
-      setSelectedArticle(null)
-    } catch (error) {
-      console.error("Error adding article to issue:", error)
-    }
-  }
-
   const getFieldName = (field: string | { _id: string; name: string }) => {
     if (typeof field === "string") {
       const foundField = fields?.find((f) => f._id === field)
@@ -150,11 +125,11 @@ export default function ArticleManage() {
     return field?.name
   }
 
-  const getSubmitterName = (submitterId: string | { _id: string; fullName: string; email: string }) => {
+  const getSubmitterName = (submitterId: string | { _id: string; name?: string; fullName?: string; email?: string }) => {
     if (typeof submitterId === "string") {
       return submitterId
     }
-    return submitterId.fullName
+    return submitterId.name || submitterId.fullName || submitterId.email || "Không rõ"
   }
 
   return (
@@ -206,7 +181,6 @@ export default function ArticleManage() {
                 <SelectItem value="all">Tất cả trạng thái</SelectItem>
                 <SelectItem value="published">Đã xuất bản</SelectItem>
                 <SelectItem value="under_review">Đang xét duyệt</SelectItem>
-                <SelectItem value="draft">Bản nháp</SelectItem>
                 <SelectItem value="rejected">Từ chối</SelectItem>
               </SelectContent>
             </Select>
@@ -301,7 +275,36 @@ export default function ArticleManage() {
                                 Thêm vào số
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem onClick={() => navigate(`/admin/articles/${article._id}/reviews`)}>
+                            {article.status === "accepted" && (
+                              <DropdownMenuItem
+                                onClick={async () => {
+                                  let issueId = article.issueId;
+                                  // Nếu chưa có số báo, mở dialog chọn số báo
+                                  if (!issueId) {
+                                    handleAddToIssue(article);
+                                    return;
+                                  }
+                                  // Đã có số báo, gọi API publish
+                                  try {
+                                    await fetch(`/api/articles/${article._id}/publish`, {
+                                      method: "PUT",
+                                      headers: {
+                                        "Content-Type": "application/json",
+                                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                                      },
+                                      body: JSON.stringify({ issueId }),
+                                    });
+                                    handleApplyFilters();
+                                  } catch (error) {
+                                    console.error("Error publishing article:", error);
+                                  }
+                                }}
+                              >
+                                <Calendar className="mr-2 h-4 w-4" />
+                                Xuất bản
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem onClick={() => navigate(`/admin/reviews/${article._id}`)}>
                               <FileText className="mr-2 h-4 w-4" />
                               Quản lý phản biện
                             </DropdownMenuItem>
@@ -374,8 +377,8 @@ export default function ArticleManage() {
       <Dialog open={!!selectedArticle} onOpenChange={(open) => !open && setSelectedArticle(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Thêm bài báo vào số</DialogTitle>
-            <DialogDescription>Chọn số để thêm bài báo "{selectedArticle?.title}" vào.</DialogDescription>
+            <DialogTitle>Thêm bài báo vào số & xuất bản</DialogTitle>
+            <DialogDescription>Chọn số để thêm và xuất bản bài báo "{selectedArticle?.title}".</DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Select value={selectedIssue} onValueChange={setSelectedIssue}>
@@ -397,8 +400,37 @@ export default function ArticleManage() {
             <Button variant="outline" onClick={() => setSelectedArticle(null)}>
               Hủy
             </Button>
-            <Button onClick={confirmAddToIssue} disabled={!selectedIssue}>
-              Thêm vào số
+            <Button
+              onClick={async () => {
+                if (!selectedArticle || !selectedIssue) return;
+                try {
+                  // 1. Gán bài báo vào số báo
+                  await fetch(`/api/issues/${selectedIssue}/articles`, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                    body: JSON.stringify({ articleId: selectedArticle._id }),
+                  });
+                  // 2. Xuất bản bài báo
+                  await fetch(`/api/articles/${selectedArticle._id}/publish`, {
+                    method: "PUT",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                    body: JSON.stringify({ issueId: selectedIssue }),
+                  });
+                  setSelectedArticle(null);
+                  handleApplyFilters();
+                } catch (error) {
+                  console.error("Error add to issue & publish:", error);
+                }
+              }}
+              disabled={!selectedIssue}
+            >
+              Thêm & Xuất bản
             </Button>
           </DialogFooter>
         </DialogContent>

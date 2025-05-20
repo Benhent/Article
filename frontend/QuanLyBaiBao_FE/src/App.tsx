@@ -37,7 +37,11 @@ import IssueManage from "./pages/Admin/_adminpages/issueManage";
 import AdminDashboard from "./pages/Admin/_adminpages/adminDashboard";
 import ReviewManage from "./pages/Admin/_adminpages/reviewManage";
 import ReviewDetail from "./pages/Admin/_adminpages/partial/review/reviewDetail";
-
+import Review from "./pages/root/_rootpages/Review";
+import Reviewdetail from "./pages/root/_rootpages/partial/Review/MyReviewdetail";
+import MyArticleCreate from "./pages/root/_rootpages/partial/Article/MyArticlecreate";
+import MyArticleDetail from "./pages/root/_rootpages/partial/Article/MyArticledetail";
+import MyArticleEdit from "./pages/root/_rootpages/partial/Article/MyArticleedit";
 const App: React.FC = () => {
   const { isCheckingAuth, checkAuth } = useAuthStore();
   const location = useLocation();
@@ -49,7 +53,7 @@ const App: React.FC = () => {
   if (isCheckingAuth) return <LoadingSpinner />;
 
   // Danh sách các private routes
-  const privateRoutes = ['/login', '/signup', '/forgot-password', '/reset-password'];
+  const privateRoutes = ['/login', '/signup', '/forgot-password', '/reset-password', '/verify-email'];
   const isPrivateRoute = privateRoutes.some(route => location.pathname.startsWith(route));
   const isAdminRoute = location.pathname.startsWith('/admin');
 
@@ -69,7 +73,11 @@ const App: React.FC = () => {
           <Route path='/security' element={<Security />}/>
           <Route path='/profile' element={<ProfilePage />}/>
           <Route path='/post-article' element={<PostArticle />}/>
-
+          <Route path='/my-reviews' element={<Review />}/>
+          <Route path='/my-reviews/:id' element={<Reviewdetail />}/>
+          <Route path='/post-article/create' element={<MyArticleCreate />}/>
+          <Route path='/post-article/:id' element={<MyArticleDetail />}/>
+          <Route path='/post-article/:id/edit' element={<MyArticleEdit />}/>
           {/* admin routes */}
           <Route element={<AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>}>
             <Route path='/admin/dashboard' element={<AdminDashboard />}/>
@@ -91,9 +99,6 @@ const App: React.FC = () => {
           <Route path='/reset-password/:token' element={<div className="flex items-center justify-center min-h-screen"><ResetPasswordPage /></div>}/>
           <Route path='/verify-email' element={<div className="flex items-center justify-center min-h-screen"><VerifyEmailPage /></div>} />
 
-          {/* <Route element={<RedirectAuthenticatedUser/>}>
-            <Route 
-          </Route> */}
           {/* catch all routes */}
           <Route path='*' element={<Navigate to='/' replace />} />
         </Routes>

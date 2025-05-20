@@ -32,7 +32,6 @@ interface ArticleStore extends ArticleState {
 
   // File operations
   uploadFile: (file: File, articleId: string) => Promise<void>
-  uploadThumbnail: (file: File, articleId: string) => Promise<void>
 
   // Utility functions
   resetArticle: () => void
@@ -127,20 +126,26 @@ const useArticleStore = create<ArticleStore>((set) => ({
     try {
       setLoading("createArticle", true)
       setError("createArticle", null)
-
+      
       const response = await apiService.post<Article>("/articles", data)
-
-      set((state) => ({
-        articles: [response.data, ...state.articles],
-      }))
-
-      showSuccessToast("Article created successfully")
-      return response.data._id
-    } catch (error) {
+      
+      if (response.data && response.data._id) {
+        return response.data._id
+      }
+      
+      throw new Error("Không nhận được ID bài báo từ server")
+    } catch (error: any) {
       console.error("Error creating article:", error)
+      
+      // Xử lý lỗi cụ thể
+      if (error.response) {
+        const errorMessage = error.response.data?.message || "Lỗi khi tạo bài báo"
+        setError("createArticle", errorMessage)
+        throw new Error(errorMessage)
+      }
+      
       setError("createArticle", "Failed to create article")
-      showErrorToast("Failed to create article")
-      return undefined
+      throw error
     } finally {
       setLoading("createArticle", false)
     }
@@ -284,7 +289,7 @@ const useArticleStore = create<ArticleStore>((set) => ({
 
       set((state) => ({
         article: state.article?._id === articleId 
-          ? { ...state.article, files: [...(state.article.files || []), response.data] }
+          ? { ...state.article, articleFile: response.data }
           : state.article
       }))
 
@@ -295,32 +300,6 @@ const useArticleStore = create<ArticleStore>((set) => ({
       showErrorToast("Failed to upload file")
     } finally {
       setLoading("uploadFile", false)
-    }
-  },
-
-  uploadThumbnail: async (file: File, articleId: string) => {
-    const { setLoading, setError, showSuccessToast, showErrorToast } = useUIStore.getState()
-
-    try {
-      setLoading("uploadThumbnail", true)
-      setError("uploadThumbnail", null)
-
-      const formData = new FormData()
-      formData.append("thumbnail", file)
-
-      const response = await apiService.post<Article>(`/articles/${articleId}/thumbnail`, formData)
-
-      set((state) => ({
-        article: state.article?._id === articleId ? response.data : state.article
-      }))
-
-      showSuccessToast("Thumbnail uploaded successfully")
-    } catch (error) {
-      console.error("Error uploading thumbnail:", error)
-      setError("uploadThumbnail", "Failed to upload thumbnail")
-      showErrorToast("Failed to upload thumbnail")
-    } finally {
-      setLoading("uploadThumbnail", false)
     }
   },
 

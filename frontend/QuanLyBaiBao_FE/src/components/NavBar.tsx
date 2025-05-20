@@ -147,12 +147,12 @@ const NavBar = () => {
             >
               Liên hệ
             </Link>
-            <button
+            {/* <button
               className="px-3 py-2 rounded-md text-sm font-medium hover:bg-primary/10 transition duration-150 flex items-center"
               onClick={() => navigate("/search")}
             >
               Tìm kiếm
-            </button>
+            </button> */}
           </div>
 
           {/* Desktop Authentication Controls */}
@@ -201,7 +201,7 @@ const NavBar = () => {
                         Thông tin tài khoản
                       </Link>
 
-                      {(isAdmin || isEditor || isReviewer) && (
+                      {(isAdmin || isEditor) && (
                         <Link
                           to="/admin/articles"
                           className="px-4 py-2 text-sm hover:bg-primary/10 transition duration-150 flex items-center"
@@ -211,13 +211,23 @@ const NavBar = () => {
                         </Link>
                       )}
 
-                      {isAuthor && (
+                      {/* {isAuthor && (
                         <Link
                           to="/my-articles"
                           className="px-4 py-2 text-sm hover:bg-primary/10 transition duration-150 flex items-center"
                         >
                           <FileText size={16} className="mr-2" />
                           Bài báo của tôi
+                        </Link>
+                      )} */}
+
+                      {(isAdmin || isReviewer) && (
+                        <Link
+                          to="/my-reviews"
+                          className="px-4 py-2 text-sm hover:bg-primary/10 transition duration-150 flex items-center"
+                        >
+                          <FileText size={16} className="mr-2" />
+                          Phản biện của tôi
                         </Link>
                       )}
 
@@ -368,6 +378,16 @@ const NavBar = () => {
                     >
                       <FileText size={18} className="mr-2" />
                       Bài báo của tôi
+                    </Link>
+                  )}
+                  {(isAdmin || isReviewer) && (
+                    <Link
+                      to="/my-reviews"
+                      className="px-3 py-2 rounded-md text-base font-medium hover:bg-primary/10 transition duration-150 flex items-center"
+                      onClick={closeMenu}
+                    >
+                      <FileText size={18} className="mr-2" />
+                      Phản biện của tôi
                     </Link>
                   )}
                   <button

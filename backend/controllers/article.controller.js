@@ -25,8 +25,9 @@ export const getArticles = async (req, res) => {
     // Thực hiện truy vấn với filter và phân trang
     const articles = await Article.find({ ...filter, ...searchQuery })
       .populate('field', 'name')
-      .populate('submitterId', 'fullName email')
-      .populate('editorId', 'fullName email')
+      .populate('submitterId', 'name email')
+      .populate('editorId', 'name email')
+      .populate('authors', 'fullName email institution country')
       .populate('articleFile')
       .skip(skip)
       .limit(limit)
@@ -59,12 +60,16 @@ export const getArticleById = async (req, res) => {
     const article = await Article.findById(id)
       .populate('field', 'name')
       .populate('secondaryFields', 'name')
-      .populate('submitterId', 'fullName email institution country')
-      .populate('editorId', 'fullName email')
+      .populate('submitterId', 'name email institution country')
+      .populate('editorId', 'name email')
       .populate('articleFile')
       .populate({
-        path: 'authors.userId',
+        path: 'authors',
         select: 'fullName email institution country'
+      })
+      .populate({
+        path: 'statusHistory',
+        populate: { path: 'changedBy', select: 'name email' }
       });
     
     if (!article) {
@@ -100,11 +105,19 @@ export const createArticle = async (req, res) => {
       submitterNote
     } = req.body;
     
+    // Kiểm tra dữ liệu bắt buộc
+    if (!title || !abstract || !field) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu thông tin bắt buộc: tiêu đề, tóm tắt hoặc lĩnh vực'
+      });
+    }
+    
     // Lấy submitterId từ user đã xác thực
     const submitterId = req.user._id;
     
     const initialStatus = new StatusHistory({
-      status: 'draft',
+      status: 'submitted',
       changedBy: submitterId,
       timestamp: new Date(),
       reason: 'Tạo bài báo mới'
@@ -126,7 +139,7 @@ export const createArticle = async (req, res) => {
       secondaryFields: secondaryFields || [],
       submitterId,
       submitterNote,
-      status: 'draft',
+      status: 'submitted',
       statusHistory: [initialStatus._id]
     });
     
@@ -169,9 +182,19 @@ export const createArticle = async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating article:', error);
+    
+    // Xử lý lỗi cụ thể
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tiêu đề bài báo đã tồn tại. Vui lòng chọn tiêu đề khác.'
+      });
+    }
+    
     res.status(500).json({ 
       success: false, 
-      message: 'Lỗi khi tạo bài báo mới' 
+      message: 'Lỗi khi tạo bài báo mới',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
@@ -207,8 +230,8 @@ export const updateArticle = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Không có quyền cập nhật bài báo này' });
     }
     
-    // Kiểm tra trạng thái bài báo (chỉ có thể cập nhật khi ở trạng thái draft, revisionRequired, resubmitted)
-    const allowedUpdateStatuses = ['draft', 'revisionRequired', 'resubmitted'];
+    // Kiểm tra trạng thái bài báo (chỉ có thể cập nhật khi ở trạng thái revisionRequired, resubmitted)
+    const allowedUpdateStatuses = ['revisionRequired', 'resubmitted'];
     if (!allowedUpdateStatuses.includes(article.status) && !isAdmin && !isEditor) {
       return res.status(400).json({ 
         success: false, 

@@ -181,7 +181,7 @@ const useReviewStore = create<ReviewStore>((set, get) => ({
       setLoading("acceptReview", true)
       setError("acceptReview", null)
 
-      const response = await apiService.put<Review>(`/reviews/${id}/accept`, {})
+      const response = await apiService.post<Review>(`/reviews/${id}/accept`, {})
 
       set((state) => ({
         reviews: state.reviews.map((review) => (review._id === id ? response.data : review)),
@@ -205,7 +205,7 @@ const useReviewStore = create<ReviewStore>((set, get) => ({
       setLoading("declineReview", true)
       setError("declineReview", null)
 
-      const response = await apiService.put<Review>(`/reviews/${id}/decline`, { declineReason })
+      const response = await apiService.post<Review>(`/reviews/${id}/decline`, { declineReason })
 
       set((state) => ({
         reviews: state.reviews.map((review) => (review._id === id ? response.data : review)),
@@ -232,7 +232,7 @@ const useReviewStore = create<ReviewStore>((set, get) => ({
       setLoading("completeReview", true)
       setError("completeReview", null)
 
-      const response = await apiService.put<Review>(`/reviews/${id}/complete`, data)
+      const response = await apiService.post<Review>(`/reviews/${id}/complete`, data)
 
       set((state) => ({
         reviews: state.reviews.map((review) => (review._id === id ? response.data : review)),

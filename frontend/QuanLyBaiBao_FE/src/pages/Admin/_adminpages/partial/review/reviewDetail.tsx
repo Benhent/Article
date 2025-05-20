@@ -1,11 +1,10 @@
-import React, { useEffect } from "react"
+import { useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useReviewStore } from "../../../../../store/rootStore"
 import { formatDate } from "../../../../../utils/dateUtils"
 import { Badge } from "../../../../../components/ui/badge"
 import { Button } from "../../../../../components/ui/button"
 import { Card } from "../../../../../components/ui/card"
-import { toast } from "react-hot-toast"
 
 const ReviewDetail = () => {
   const { reviewId } = useParams()
@@ -73,7 +72,7 @@ const ReviewDetail = () => {
             <div>
               <p className="text-sm text-gray-500">Người phản biện</p>
               <p className="font-medium">
-                {typeof currentReview.reviewerId === "object" ? currentReview.reviewerId.fullName : "Loading..."}
+                {typeof currentReview.reviewerId === "object" ? currentReview.reviewerId.name : "Loading..."}
               </p>
             </div>
             <div>
@@ -107,11 +106,11 @@ const ReviewDetail = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Nhận xét cho tác giả</p>
-                <p className="whitespace-pre-wrap">{currentReview.comments?.forAuthor}</p>
+                <p className="whitespace-pre-wrap">{currentReview.commentsForAuthor}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Nhận xét cho biên tập viên</p>
-                <p className="whitespace-pre-wrap">{currentReview.comments?.forEditor}</p>
+                <p className="whitespace-pre-wrap">{currentReview.commentsForEditor}</p>
               </div>
             </div>
           </Card>
