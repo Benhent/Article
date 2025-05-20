@@ -16,8 +16,8 @@ interface IssueStore extends IssueState {
   updateIssue: (id: string, data: Partial<Issue>) => Promise<void>
   deleteIssue: (id: string) => Promise<void>
   publishIssue: (id: string) => Promise<void>
-  addArticleToIssue: (issueId: string, articleId: string) => Promise<void>
-  removeArticleFromIssue: (issueId: string, articleId: string) => Promise<void>
+  addArticleToIssue: (id: string, articleId: string) => Promise<void>
+  removeArticleFromIssue: (id: string, articleId: string) => Promise<void>
   resetIssue: () => void
 }
 
@@ -174,18 +174,18 @@ const useIssueStore = create<IssueStore>((set) => ({
     }
   },
 
-  addArticleToIssue: async (issueId: string, articleId: string) => {
+  addArticleToIssue: async (id: string, articleId: string) => {
     const { setLoading, setError, showSuccessToast, showErrorToast } = useUIStore.getState()
 
     try {
       setLoading("addArticleToIssue", true)
       setError("addArticleToIssue", null)
 
-      const response = await apiService.put<Issue>(`/issues/${issueId}/add-article`, { articleId })
+      const response = await apiService.put<Issue>(`/issues/${id}/articles`, { articleId })
 
       set((state) => ({
-        issues: state.issues.map((issue) => (issue._id === issueId ? response.data : issue)),
-        issue: state.issue?._id === issueId ? response.data : state.issue,
+        issues: state.issues.map((issue) => (issue._id === id ? response.data : issue)),
+        issue: state.issue?._id === id ? response.data : state.issue,
       }))
 
       showSuccessToast("Article added to issue successfully")
@@ -198,18 +198,18 @@ const useIssueStore = create<IssueStore>((set) => ({
     }
   },
 
-  removeArticleFromIssue: async (issueId: string, articleId: string) => {
+  removeArticleFromIssue: async (id: string, articleId: string) => {
     const { setLoading, setError, showSuccessToast, showErrorToast } = useUIStore.getState()
 
     try {
       setLoading("removeArticleFromIssue", true)
       setError("removeArticleFromIssue", null)
 
-      const response = await apiService.put<Issue>(`/issues/${issueId}/remove-article`, { articleId })
+      const response = await apiService.put<Issue>(`/issues/${id}/articles`, { articleId })
 
       set((state) => ({
-        issues: state.issues.map((issue) => (issue._id === issueId ? response.data : issue)),
-        issue: state.issue?._id === issueId ? response.data : state.issue,
+        issues: state.issues.map((issue) => (issue._id === id ? response.data : issue)),
+        issue: state.issue?._id === id ? response.data : state.issue,
       }))
 
       showSuccessToast("Article removed from issue successfully")

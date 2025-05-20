@@ -32,7 +32,7 @@ interface ArticleStore extends ArticleState {
   ) => Promise<void>
 
   // File operations
-  uploadFile: (file: File, articleId: string) => Promise<void>
+  // uploadFile: (file: File, articleId: string) => Promise<void>
 
   // Utility functions
   resetArticle: () => void
@@ -276,33 +276,33 @@ const useArticleStore = create<ArticleStore>((set) => ({
   },
 
   // File operations
-  uploadFile: async (file: File, articleId: string) => {
-    const { setLoading, setError, showSuccessToast, showErrorToast } = useUIStore.getState()
+  // uploadFile: async (file: File, articleId: string) => {
+  //   const { setLoading, setError, showSuccessToast, showErrorToast } = useUIStore.getState()
 
-    try {
-      setLoading("uploadFile", true)
-      setError("uploadFile", null)
+  //   try {
+  //     setLoading("uploadFile", true)
+  //     setError("uploadFile", null)
 
-      const formData = new FormData()
-      formData.append("file", file)
+  //     const formData = new FormData()
+  //     formData.append("file", file)
 
-      const response = await apiService.post<ArticleFile>(`/articles/${articleId}/files`, formData)
+  //     const response = await apiService.post<ArticleFile>(`/articles/${articleId}/files`, formData)
 
-      set((state) => ({
-        article: state.article?._id === articleId 
-          ? { ...state.article, articleFile: response.data }
-          : state.article
-      }))
+  //     set((state) => ({
+  //       article: state.article?._id === articleId 
+  //         ? { ...state.article, articleFile: response.data }
+  //         : state.article
+  //     }))
 
-      showSuccessToast("File uploaded successfully")
-    } catch (error) {
-      console.error("Error uploading file:", error)
-      setError("uploadFile", "Failed to upload file")
-      showErrorToast("Failed to upload file")
-    } finally {
-      setLoading("uploadFile", false)
-    }
-  },
+  //     showSuccessToast("File uploaded successfully")
+  //   } catch (error) {
+  //     console.error("Error uploading file:", error)
+  //     setError("uploadFile", "Failed to upload file")
+  //     showErrorToast("Failed to upload file")
+  //   } finally {
+  //     setLoading("uploadFile", false)
+  //   }
+  // },
 
   // Utility functions
   resetArticle: () => {

@@ -42,7 +42,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../../../components/ui/dialog"
-import type { Article, Field } from "../../../types/article"
+import type { Article} from "../../../types/article"
+import type { Field } from "../../../types/field"
 
 const statusColor: Record<string, string> = {
   published: "bg-green-500 text-white",
@@ -195,7 +196,7 @@ export default function ArticleManage() {
                 {fields &&
                   fields.length > 0 &&
                   fields.map((field: Field) => (
-                    <SelectItem key={field._id} value={field._id}>
+                    <SelectItem key={field._id} value={field._id || ""}>
                       {field.name}
                     </SelectItem>
                   ))}
@@ -389,7 +390,7 @@ export default function ArticleManage() {
                 {issues &&
                   issues.length > 0 &&
                   issues.map((issue) => (
-                    <SelectItem key={issue._id} value={issue._id}>
+                    <SelectItem key={issue._id} value={issue._id || ""}>
                       {issue.title} (Tập {issue.volumeNumber}, Số {issue.issueNumber})
                     </SelectItem>
                   ))}
