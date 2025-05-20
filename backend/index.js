@@ -15,7 +15,7 @@ import reviewRoutes from "./routes/articlesRoutes/review.routes.js";
 import statusHistoryRoutes from "./routes/articlesRoutes/statusHistory.routes.js";
 import fieldRoutes from "./routes/articlesRoutes/field.route.js";
 import issueRoutes from "./routes/articlesRoutes/issue.routes.js";
-import discussionRoutes from "./routes/articlesRoutes/discussion.routes.js";
+// import discussionRoutes from "./routes/articlesRoutes/discussion.routes.js";
 
 dotenv.config();
 
@@ -51,7 +51,7 @@ app.use("/api/reviews", reviewRoutes)
 app.use("/api/status-history", statusHistoryRoutes)
 app.use("/api/fields", fieldRoutes)
 app.use("/api/issues", issueRoutes)
-app.use("/api/discussions", discussionRoutes)
+// app.use("/api/discussions", discussionRoutes)
 
 app.listen(PORT, () => {
     connectDB();

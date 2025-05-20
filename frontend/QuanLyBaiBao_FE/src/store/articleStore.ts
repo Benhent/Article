@@ -2,7 +2,6 @@ import { create } from "zustand"
 import apiService from "../services/api"
 import useUIStore from "./uiStore"
 import type { Article} from "../types/article"
-import type { ArticleFile } from "../types/file"
 import type { Pagination, FetchParams } from "../services/api"
 
 interface ArticleState {
@@ -19,7 +18,7 @@ interface ArticleStore extends ArticleState {
   fetchArticles: (params?: FetchParams) => Promise<void>
   fetchArticleById: (id: string) => Promise<void>
   fetchArticleStats: () => Promise<void>
-  createArticle: (data: Partial<Article>) => Promise<string | undefined>
+  createArticle: (data: Partial<Article> | FormData) => Promise<string | undefined>
   updateArticle: (id: string, data: Partial<Article>) => Promise<void>
   deleteArticle: (id: string) => Promise<void>
 
@@ -121,7 +120,7 @@ const useArticleStore = create<ArticleStore>((set) => ({
     }
   },
 
-  createArticle: async (data: Partial<Article>) => {
+  createArticle: async (data: Partial<Article> | FormData) => {
     const { setLoading, setError, showSuccessToast, showErrorToast } = useUIStore.getState()
 
     try {
@@ -131,10 +130,11 @@ const useArticleStore = create<ArticleStore>((set) => ({
       const response = await apiService.post<Article>("/articles", data)
       
       if (response.data && response.data._id) {
+        showSuccessToast("Tạo bài báo thành công")
         return response.data._id
       }
       
-      throw new Error("Không nhận được ID bài báo từ server")
+      showErrorToast("Không nhận được ID bài báo từ server")
     } catch (error: any) {
       console.error("Error creating article:", error)
       
@@ -191,10 +191,12 @@ const useArticleStore = create<ArticleStore>((set) => ({
       }))
 
       showSuccessToast("Article deleted successfully")
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting article:", error)
-      setError("deleteArticle", "Failed to delete article")
-      showErrorToast("Failed to delete article")
+      const errorMessage = error.response?.data?.message || "Failed to delete article"
+      setError("deleteArticle", errorMessage)
+      showErrorToast(errorMessage)
+      throw error // Re-throw the error to be handled by the component
     } finally {
       setLoading("deleteArticle", false)
     }
@@ -214,7 +216,7 @@ const useArticleStore = create<ArticleStore>((set) => ({
         article: state.article?._id === id ? response.data : state.article,
       }))
 
-      showSuccessToast(`Article status changed to ${status}`)
+      showSuccessToast(`Đã chuyển trạng thái bài báo thành ${status}`)
     } catch (error) {
       console.error("Error changing article status:", error)
       setError("changeStatus", "Failed to change article status")

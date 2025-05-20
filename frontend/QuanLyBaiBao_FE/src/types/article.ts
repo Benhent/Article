@@ -2,7 +2,8 @@ import { ArticleAuthor } from './author';
 import { ArticleFile } from './file';
 import { StatusHistory } from './statushistory';
 
-export type ArticleStatus = 
+export type ArticleStatus =
+  | 'draft'
   | 'submitted'
   | 'underReview'
   | 'revisionRequired'
@@ -13,7 +14,7 @@ export type ArticleStatus =
 
 export interface Article {
     _id: string
-    titlePrefix?: string
+    titlePrefix: string
     title: string
     subtitle?: string
     thumbnail?: string

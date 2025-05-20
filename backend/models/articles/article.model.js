@@ -75,6 +75,7 @@ const ArticleSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: [
+      'draft',
       'submitted',
       'underReview',
       'revisionRequired',
