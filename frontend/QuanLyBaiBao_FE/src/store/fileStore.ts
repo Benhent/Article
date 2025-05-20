@@ -1,7 +1,7 @@
 import { create } from "zustand"
 import apiService from "../services/api"
 import useUIStore from "./uiStore"
-import type { ArticleFile } from "../types/article"
+import type { ArticleFile } from "../types/file"
 import { uploadArticleFileToCloudinary } from "../config/cloudinary"
 
 interface FileState {

@@ -1,7 +1,7 @@
 import { create } from "zustand"
 import apiService from "../services/api"
 import useUIStore from "./uiStore"
-import type { Discussion } from "../types/article"
+import type { Discussion } from "../types/discussion"
 
 interface DiscussionState {
   discussions: Discussion[]

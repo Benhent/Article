@@ -1,7 +1,7 @@
 import { create } from "zustand"
 import apiService from "../services/api"
 import useUIStore from "./uiStore"
-import type { Field } from "../types/article"
+import type { Field } from "../types/field"
 
 interface FieldState {
   fields: Field[]

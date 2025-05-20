@@ -78,6 +78,7 @@ const App: React.FC = () => {
           <Route path='/post-article/create' element={<MyArticleCreate />}/>
           <Route path='/post-article/:id' element={<MyArticleDetail />}/>
           <Route path='/post-article/:id/edit' element={<MyArticleEdit />}/>
+          
           {/* admin routes */}
           <Route element={<AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>}>
             <Route path='/admin/dashboard' element={<AdminDashboard />}/>

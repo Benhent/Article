@@ -1,7 +1,8 @@
 import { create } from "zustand"
 import apiService from "../services/api"
 import useUIStore from "./uiStore"
-import type { Article, ArticleFile } from "../types/article"
+import type { Article} from "../types/article"
+import type { ArticleFile } from "../types/file"
 import type { Pagination, FetchParams } from "../services/api"
 
 interface ArticleState {

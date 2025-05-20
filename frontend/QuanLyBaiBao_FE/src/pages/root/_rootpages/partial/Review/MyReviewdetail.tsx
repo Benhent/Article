@@ -82,10 +82,6 @@ const MyReviewdetail = () => {
     }
   }
 
-  const handleDownloadFile = (fileUrl: string) => {
-    window.open(fileUrl, "_blank")
-  }
-
   if (loading.review) {
     return (
       <div className="flex justify-center items-center h-screen">

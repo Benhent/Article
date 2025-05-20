@@ -1,8 +1,7 @@
 import { create } from "zustand"
 import apiService from "../services/api"
 import useUIStore from "./uiStore"
-import type { Review } from "../types/article"
-import { toast } from "react-hot-toast"
+import type { Review } from "../types/review"
 
 interface ReviewState {
   reviews: Review[]

@@ -1,21 +1,41 @@
 import { useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { useReviewStore } from "../../../../../store/rootStore"
+import useReviewStore from "../../../../../store/reviewStore"
 import { formatDate } from "../../../../../utils/dateUtils"
 import { Badge } from "../../../../../components/ui/badge"
 import { Button } from "../../../../../components/ui/button"
 import { Card } from "../../../../../components/ui/card"
 
 const ReviewDetail = () => {
-  const { reviewId } = useParams()
+  const { id } = useParams()
   const navigate = useNavigate()
-  const { currentReview, fetchReviewById, loading } = useReviewStore()
+  const { currentReview, fetchReviewById } = useReviewStore()
 
   useEffect(() => {
-    if (reviewId) {
-      fetchReviewById(reviewId)
+    if (id) {
+      fetchReviewById(id)
     }
-  }, [reviewId, fetchReviewById])
+  }, [id, fetchReviewById])
+
+  // Debug log
+  console.log("currentReview:", currentReview)
+
+  // Loading state: show loading if currentReview chưa có và reviewId đã có
+  if (!currentReview && id) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center">Đang tải...</div>
+      </div>
+    )
+  }
+
+  if (!currentReview) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center">Không tìm thấy thông tin phản biện</div>
+      </div>
+    )
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -34,29 +54,11 @@ const ReviewDetail = () => {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">Đang tải...</div>
-      </div>
-    )
-  }
-
-  if (!currentReview) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">Không tìm thấy thông tin phản biện</div>
-      </div>
-    )
-  }
-
   return (
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Chi tiết phản biện</h1>
-        <Button variant="outline" onClick={() => navigate("/admin/reviews")}>
-          Quay lại
-        </Button>
+        <Button variant="outline" onClick={() => navigate("/admin/reviews")}>Quay lại</Button>
       </div>
 
       <div className="grid gap-6">
@@ -66,13 +68,17 @@ const ReviewDetail = () => {
             <div>
               <p className="text-sm text-gray-500">Bài báo</p>
               <p className="font-medium">
-                {typeof currentReview.articleId === "object" ? currentReview.articleId.title : "Loading..."}
+                {typeof currentReview.articleId === "object" && currentReview.articleId !== null && "title" in currentReview.articleId
+                  ? currentReview.articleId.title
+                  : "Không có tiêu đề"}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Người phản biện</p>
               <p className="font-medium">
-                {typeof currentReview.reviewerId === "object" ? currentReview.reviewerId.name : "Loading..."}
+                {typeof currentReview.reviewerId === "object" && currentReview.reviewerId !== null && "name" in currentReview.reviewerId
+                  ? currentReview.reviewerId.name
+                  : "Không rõ"}
               </p>
             </div>
             <div>
@@ -106,11 +112,11 @@ const ReviewDetail = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Nhận xét cho tác giả</p>
-                <p className="whitespace-pre-wrap">{currentReview.commentsForAuthor}</p>
+                <p className="whitespace-pre-wrap">{currentReview.comments?.forAuthor}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Nhận xét cho biên tập viên</p>
-                <p className="whitespace-pre-wrap">{currentReview.commentsForEditor}</p>
+                <p className="whitespace-pre-wrap">{currentReview.comments?.forEditor}</p>
               </div>
             </div>
           </Card>
