@@ -11,7 +11,9 @@ import {
   checkEmailExists,
   changePassword,
   getUsers,
-  getUserByEmail
+  getUserByEmail,
+  updateUserRole,
+  deleteUser
 } from '../controllers/auth.controller.js';
 import {verifyToken} from '../middlewares/verifyToken.js';
 import { authorizeRoles } from '../middlewares/isAdmin.js';
@@ -34,4 +36,6 @@ router.post('/check-email', checkEmailExists);
 router.post('/user-by-email', getUserByEmail);
 router.put('/change-password', changePassword);
 router.get('/users', authorizeRoles('admin'), getUsers);
+router.put('/update-role', authorizeRoles('admin'), updateUserRole);
+router.delete('/delete-user', authorizeRoles('admin'), deleteUser);
 export default router;

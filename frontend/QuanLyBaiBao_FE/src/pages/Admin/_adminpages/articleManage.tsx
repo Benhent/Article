@@ -16,7 +16,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "../../../components/ui/pagination"
-import { MoreHorizontal, Edit, Eye, Trash2, FileText, Calendar, UserPlus, CheckCircle, XCircle } from "lucide-react"
+import { MoreHorizontal, Edit, Eye, Trash2, FileText, Calendar, UserPlus, CheckCircle, XCircle, MessageSquare } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +48,7 @@ import { Label } from "../../../components/ui/label"
 import type { Article } from "../../../types/article"
 import type { Field } from "../../../types/field"
 import apiService from "../../../services/api"
+import CreateDiscussionModal from "./partial/discussion/CreateDiscussionModal"
 
 // Định nghĩa màu và nhãn cho các trạng thái bài báo
 const statusColor: Record<string, string> = {
@@ -114,6 +115,15 @@ export default function ArticleManage() {
     newStatus: "",
     reason: "",
   })
+  const [createDiscussionModal, setCreateDiscussionModal] = useState<{
+    isOpen: boolean;
+    articleId: string;
+    articleTitle: string;
+  }>({
+    isOpen: false,
+    articleId: "",
+    articleTitle: "",
+  });
 
   useEffect(() => {
     fetchFields({ isActive: true })
@@ -262,6 +272,14 @@ export default function ArticleManage() {
       showErrorToast("Lỗi khi xuất bản bài báo")
     }
   }
+
+  const handleCreateDiscussion = (article: Article) => {
+    setCreateDiscussionModal({
+      isOpen: true,
+      articleId: article._id,
+      articleTitle: article.title,
+    });
+  };
 
   return (
     <div className="container mx-auto py-8">
@@ -468,6 +486,11 @@ export default function ArticleManage() {
                               Quản lý phản biện
                             </DropdownMenuItem>
 
+                            <DropdownMenuItem onClick={() => handleCreateDiscussion(article)}>
+                              <MessageSquare className="mr-2 h-4 w-4 text-blue-500" />
+                              Create Discussion
+                            </DropdownMenuItem>
+
                             {/* Xóa bài báo */}
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
@@ -649,6 +672,14 @@ export default function ArticleManage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Add CreateDiscussionModal */}
+      <CreateDiscussionModal
+        isOpen={createDiscussionModal.isOpen}
+        onClose={() => setCreateDiscussionModal({ isOpen: false, articleId: "", articleTitle: "" })}
+        articleId={createDiscussionModal.articleId}
+        articleTitle={createDiscussionModal.articleTitle}
+      />
     </div>
   )
 }

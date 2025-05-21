@@ -1,6 +1,6 @@
 import type React from "react"
 import { Link, useLocation } from "react-router-dom"
-import { BarChart3, FileText, Users, Settings, LogOut, BookOpen, MessageSquare, LandPlot } from "lucide-react"
+import { BarChart3, FileText, Users, Settings, LogOut, BookOpen, MessageSquare, LandPlot, UserCog, Mail, MessageCircle } from "lucide-react"
 import { cn } from "../lib/utils"
 import { Button } from "../components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
@@ -50,6 +50,21 @@ const navItems: NavItem[] = [
     title: "Phản biện",
     href: "/admin/reviews",
     icon: MessageSquare,
+  },
+  {
+    title: "Quản lý người dùng",
+    href: "/admin/users",
+    icon: UserCog,
+  },
+  {
+    title: "Liên hệ",
+    href: "/admin/contact",
+    icon: Mail,
+  },
+  {
+    title: "Thảo luận",
+    href: "/admin/discussions",
+    icon: MessageCircle,
   }
 ]
 

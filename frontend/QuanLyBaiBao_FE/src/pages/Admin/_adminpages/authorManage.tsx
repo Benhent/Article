@@ -7,13 +7,10 @@ import {
   Pencil,
   Trash2,
   Mail,
-  Phone,
   Building2,
-  GraduationCap,
   Globe,
   Loader2,
 } from "lucide-react"
-
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card"
 import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
@@ -49,8 +46,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 
 import useAuthorStore from "../../../store/authorStore"
 import useAuthStore from '../../../store/authStore'
-import apiService from "../../../services/api"
-import type { ArticleAuthor } from "../../../types/article"
+import type { ArticleAuthor } from "../../../types/author"
 import useArticleStore from '../../../store/articleStore'
 
 interface AuthorFormData {
@@ -61,10 +57,6 @@ interface AuthorFormData {
   isCorresponding: boolean
   orcid?: string
   hasAccount: boolean
-}
-
-interface EmailCheckResponse {
-  exists: boolean
 }
 
 const AuthorManage = () => {
@@ -230,7 +222,7 @@ const AuthorManage = () => {
                             <FormLabel>Bài báo</FormLabel>
                             <FormControl>
                               <Select value={field.value} onValueChange={field.onChange}>
-                                <SelectTrigger className="w-full">
+                                <SelectTrigger className="w-full overflow-hidden text-ellipsis whitespace-nowrap">
                                   <SelectValue placeholder="Chọn bài báo" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -518,7 +510,7 @@ const AuthorManage = () => {
                         <FormLabel>Bài báo</FormLabel>
                         <FormControl>
                           <Select value={field.value} onValueChange={field.onChange}>
-                            <SelectTrigger className="w-full">
+                            <SelectTrigger className="w-full overflow-hidden text-ellipsis whitespace-nowrap">
                               <SelectValue placeholder="Chọn bài báo" />
                             </SelectTrigger>
                             <SelectContent>

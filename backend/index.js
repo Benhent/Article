@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import session from 'express-session';
+import { createServer } from 'http';
+import { initSocket } from './config/socket.js';
 import { connectDB } from "./db/connectDB.js";
 
 import authRoutes from "./routes/auth.route.js"
@@ -15,13 +17,16 @@ import reviewRoutes from "./routes/articlesRoutes/review.routes.js";
 import statusHistoryRoutes from "./routes/articlesRoutes/statusHistory.routes.js";
 import fieldRoutes from "./routes/articlesRoutes/field.route.js";
 import issueRoutes from "./routes/articlesRoutes/issue.routes.js";
-// import discussionRoutes from "./routes/articlesRoutes/discussion.routes.js";
+import discussionRoutes from "./routes/articlesRoutes/discussion.routes.js";
+import contactRoutes from "./routes/contact.route.js";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT;
+const httpServer = createServer(app);
 
+initSocket(httpServer);
 app.use(cors({
     origin: process.env.CLIENT_URL,
     credentials: true
@@ -51,7 +56,8 @@ app.use("/api/reviews", reviewRoutes)
 app.use("/api/status-history", statusHistoryRoutes)
 app.use("/api/fields", fieldRoutes)
 app.use("/api/issues", issueRoutes)
-// app.use("/api/discussions", discussionRoutes)
+app.use("/api/discussions", discussionRoutes)
+app.use("/api/contacts", contactRoutes)
 
 app.listen(PORT, () => {
     connectDB();

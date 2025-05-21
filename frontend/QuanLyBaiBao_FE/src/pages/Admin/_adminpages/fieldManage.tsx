@@ -17,9 +17,9 @@ import {
 import { Badge } from "../../../components/ui/badge"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "../../../components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select"
-import { Loader2, Plus, Pencil, Trash2, CheckCircle2, Ban, ChevronLeft, ChevronRight } from "lucide-react"
+import { Plus, Pencil, Trash2, CheckCircle2, Ban, ChevronLeft, ChevronRight } from "lucide-react"
 import useFieldStore from "../../../store/fieldStore"
-import type { Field } from "../../../types/article"
+import type { Field } from "../../../types/field"
 
 interface FieldFormData {
   name: string
@@ -44,7 +44,7 @@ const FieldManage = () => {
 
   const filteredFields = fields.filter((field) => {
     const matchSearch = field.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      field.code.toLowerCase().includes(searchQuery.toLowerCase())
+      field.code?.toLowerCase().includes(searchQuery.toLowerCase())
     const matchStatus = statusFilter === 'all' ? true : (statusFilter === 'active' ? field.isActive : !field.isActive)
     return matchSearch && matchStatus
   })
@@ -107,7 +107,11 @@ const FieldManage = () => {
   }, [selectedField, editForm])
 
   const handleAddField = async (data: FieldFormData) => {
-    await createField(data)
+    const submitData = { ...data }
+    if (!submitData.parent || submitData.parent === "none") {
+      delete submitData.parent
+    }
+    await createField(submitData)
     setIsAddDialogOpen(false)
     addForm.reset()
   }

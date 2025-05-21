@@ -3,10 +3,10 @@ export interface Field {
     name: string;
     description?: string;
     code?: string;
-    parent?: string;
+    parent?: string | Field;
     level?: number;
     isActive?: boolean;
     createdAt?: Date | string;
     updatedAt?: Date | string;
-    children?: Field[]; // nếu có dùng populate virtual
+    children?: Field[];
   }

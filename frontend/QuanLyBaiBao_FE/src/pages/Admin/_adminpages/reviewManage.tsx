@@ -7,6 +7,22 @@ import { Button } from "../../../components/ui/button"
 import { Card } from "../../../components/ui/card"
 import { Input } from "../../../components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../components/ui/table"
+import type { Review } from "../../../types/review"
+
+interface PopulatedArticle {
+  _id: string;
+  title: string;
+}
+
+interface PopulatedReviewer {
+  _id: string;
+  name: string;
+}
+
+type PopulatedReview = Review & {
+  articleId: PopulatedArticle;
+  reviewerId: PopulatedReviewer;
+}
 
 const STATUS_OPTIONS = [
   { value: "all", label: "Tất cả trạng thái" },
@@ -48,10 +64,38 @@ const ReviewManage = () => {
     navigate(`/admin/reviews/${reviewId}`)
   }
 
+  const isPopulatedReview = (review: Review): review is PopulatedReview => {
+    return (
+      typeof review.articleId === 'object' &&
+      review.articleId !== null &&
+      'title' in review.articleId &&
+      typeof review.reviewerId === 'object' &&
+      review.reviewerId !== null &&
+      'name' in review.reviewerId
+    )
+  }
+
+  const getArticleTitle = (review: Review) => {
+    if (isPopulatedReview(review)) {
+      return review.articleId.title || 'Loading...'
+    }
+    return 'Loading...'
+  }
+
+  const getReviewerName = (review: Review) => {
+    if (isPopulatedReview(review)) {
+      return review.reviewerId.name || 'Loading...'
+    }
+    return 'Loading...'
+  }
+
   const filteredReviews = reviews.filter((review) => {
+    const articleTitle = getArticleTitle(review)
+    const reviewerName = getReviewerName(review)
+    
     const matchesSearch = 
-      (typeof review.articleId === "object" && review.articleId.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (typeof review.reviewerId === "object" && review.reviewerId.name.toLowerCase().includes(searchTerm.toLowerCase()))
+      articleTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      reviewerName.toLowerCase().includes(searchTerm.toLowerCase())
     
     const matchesStatus = statusFilter === "all" || review.status === statusFilter
 
@@ -60,8 +104,8 @@ const ReviewManage = () => {
 
   // Sắp xếp reviews theo hạn nộp giảm dần (mới nhất lên đầu)
   const sortedReviews = [...filteredReviews].sort((a, b) => {
-    const dateA = new Date(a.reviewDeadline).getTime();
-    const dateB = new Date(b.reviewDeadline).getTime();
+    const dateA = a.reviewDeadline ? new Date(a.reviewDeadline).getTime() : 0;
+    const dateB = b.reviewDeadline ? new Date(b.reviewDeadline).getTime() : 0;
     return dateB - dateA;
   });
 
@@ -122,24 +166,24 @@ const ReviewManage = () => {
               sortedReviews.map((review) => (
                 <TableRow key={review._id}>
                   <TableCell>
-                    {typeof review.articleId === "object" ? review.articleId.title : "Loading..."}
+                    {getArticleTitle(review)}
                   </TableCell>
                   <TableCell>
-                    {typeof review.reviewerId === "object" ? review.reviewerId.name : "Loading..."}
+                    {getReviewerName(review)}
                   </TableCell>
                   <TableCell>Vòng {review.round}</TableCell>
                   <TableCell>
-                    <Badge className={getStatusColor(review.status)}>
+                    <Badge className={getStatusColor(review.status || 'invited')}>
                       {review.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{formatDate(review.responseDeadline)}</TableCell>
-                  <TableCell>{formatDate(review.reviewDeadline)}</TableCell>
+                  <TableCell>{review.responseDeadline ? formatDate(review.responseDeadline) : '-'}</TableCell>
+                  <TableCell>{review.reviewDeadline ? formatDate(review.reviewDeadline) : '-'}</TableCell>
                   <TableCell>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleViewDetail(review._id)}
+                      onClick={() => review._id && handleViewDetail(review._id)}
                     >
                       Chi tiết
                     </Button>

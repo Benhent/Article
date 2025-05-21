@@ -43,7 +43,6 @@ interface AuthState {
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, password: string, confirmPassword: string) => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string, confirmPassword: string) => Promise<void>;
-  // getProfile: () => Promise<void>;
   updateProfile: (
     name: string,
     username: string,
@@ -53,6 +52,8 @@ interface AuthState {
   ) => Promise<void>;
   fetchUsers: () => Promise<void>;
   getUserByEmail: (email: string) => Promise<User | null>;
+  updateUserRole: (userId: string, newRole: string) => Promise<void>;
+  deleteUser: (userId: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -275,8 +276,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   fetchUsers: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axios.get<User[]>(`${API_URL}/users`);
-      set({ users: response.data, isLoading: false });
+      // Thêm kiểu response và lấy data từ thuộc tính 'data' của response
+      const response = await axios.get<{ data: User[] }>(`${API_URL}/users`);
+      set({ users: response.data.data, isLoading: false }); // Sửa thành response.data.data
     } catch (error) {
       const axiosError = error as AxiosError<{ message: string }>;
       set({ 
@@ -293,6 +295,57 @@ export const useAuthStore = create<AuthState>((set) => ({
       return response.data.user;
     } catch (error) {
       return null;
+    }
+  },
+
+  updateUserRole: async (userId, newRole) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await axios.put<{ success: boolean; user: User; message: string }>(
+        `${API_URL}/update-role`,
+        { userId, newRole }
+      );
+
+      if (response.data.success) {
+        // Update the user in the users list if it exists
+        set((state) => ({
+          users: state.users.map((user) =>
+            user._id === userId ? { ...user, role: newRole } : user
+          ),
+          isLoading: false,
+          message: response.data.message
+        }));
+      } else {
+        set({
+          error: "Failed to update user role",
+          isLoading: false
+        });
+      }
+    } catch (error) {
+      const axiosError = error as AxiosError<{ message: string }>;
+      set({
+        error: axiosError.response?.data?.message || "Error updating user role",
+        isLoading: false
+      });
+      throw error;
+    }
+  },
+
+  deleteUser: async (userId) => {
+    set({ isLoading: true, error: null });
+    try {
+      await axios.delete(`${API_URL}/delete-user`, { data: { userId } });
+      set((state) => ({
+        users: state.users.filter(user => user._id !== userId),
+        isLoading: false
+      }));
+    } catch (error) {
+      const axiosError = error as AxiosError<{ message: string }>;
+      set({ 
+        error: axiosError.response?.data?.message || "Error deleting user", 
+        isLoading: false 
+      });
+      throw error;
     }
   },
 

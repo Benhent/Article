@@ -1,6 +1,7 @@
 import { Discussion } from '../models/articles/discussion.model.js';
 import { Article } from '../models/articles/article.model.js';
 import { User } from '../models/user.model.js';
+import { getIO } from '../config/socket.js';
 
 // Create a new discussion
 const createDiscussion = async (req, res) => {
@@ -120,12 +121,22 @@ const addMessage = async (req, res) => {
       });
     }
 
-    await discussion.addMessage(senderId, content, attachments);
+    const updatedDiscussion = await discussion.addMessage(senderId, content, attachments);
+
+    // Emit the new message through Socket.IO
+    const io = getIO();
+    io.to(`discussion_${discussionId}`).emit('message_received', {
+      senderId,
+      content,
+      attachments,
+      sentAt: new Date(),
+      readBy: [{ userId: senderId, readAt: new Date() }]
+    });
 
     return res.status(200).json({
       success: true,
       message: "Message added successfully",
-      data: discussion
+      data: updatedDiscussion
     });
   } catch (error) {
     console.log("Error in addMessage:", error);
@@ -334,6 +345,28 @@ const deleteDiscussion = async (req, res) => {
   }
 };
 
+// Get all discussions
+const getAllDiscussions = async (req, res) => {
+  try {
+    const discussions = await Discussion.find()
+      .populate('initiatorId', 'username email')
+      .populate('participants', 'username email')
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      message: "Discussions retrieved successfully",
+      data: discussions
+    });
+  } catch (error) {
+    console.log("Error in getAllDiscussions:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Error retrieving discussions"
+    });
+  }
+};
+
 export {
   createDiscussion,
   getArticleDiscussions,
@@ -343,5 +376,6 @@ export {
   addParticipant,
   removeParticipant,
   updateDiscussion,
-  deleteDiscussion
+  deleteDiscussion,
+  getAllDiscussions
 }; 

@@ -26,7 +26,7 @@ export const createArticleAuthor = async (req, res) => {
       });
     }
 
-    // If hasAccount is true, check if user exists
+    // nếu hasAccount là true, kiểm tra xem người dùng có tồn tại không
     if (hasAccount && userId) {
       const user = await User.findById(userId);
       if (!user) {
@@ -37,7 +37,7 @@ export const createArticleAuthor = async (req, res) => {
       }
     }
 
-    // Create new article author
+    // tạo tác giả mới
     const articleAuthor = new ArticleAuthor({
       articleId,
       userId,
@@ -91,7 +91,7 @@ export const getAllArticleAuthors = async (req, res) => {
     console.error("Error in getAllArticleAuthors:", error);
     res.status(500).json({
       success: false,
-      message: "Server error while fetching article authors"
+      message: "Lỗi server khi lấy danh sách tác giả"
     });
   }
 };
@@ -104,7 +104,7 @@ export const getArticleAuthor = async (req, res) => {
     if (!articleAuthor) {
       return res.status(404).json({
         success: false,
-        message: 'Article author not found'
+        message: 'Không tìm thấy tác giả'
       });
     }
 
@@ -116,7 +116,7 @@ export const getArticleAuthor = async (req, res) => {
     console.error("Error in getArticleAuthor:", error);
     res.status(500).json({
       success: false,
-      message: "Server error while fetching article author"
+      message: "Lỗi server khi lấy thông tin tác giả"
     });
   }
 };
@@ -125,13 +125,13 @@ export const updateArticleAuthor = async (req, res) => {
   try {
     const { userId } = req.body;
     
-    // If userId is being updated, check if user exists
+    // Nếu userId đang được cập nhật, hãy kiểm tra xem người dùng có tồn tại không
     if (userId) {
       const user = await User.findById(userId);
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: 'User not found'
+          message: 'Người dùng không tồn tại'
         });
       }
     }
@@ -145,7 +145,7 @@ export const updateArticleAuthor = async (req, res) => {
     if (!articleAuthor) {
       return res.status(404).json({
         success: false,
-        message: 'Article author not found'
+        message: 'Tác giả không tồn tại'
       });
     }
 
@@ -157,7 +157,7 @@ export const updateArticleAuthor = async (req, res) => {
     console.error("Error in update ArticleAuthor:", error);
     res.status(500).json({
       success: false,
-      message: "Server error while updating article author"
+      message: "Lỗi server khi cập nhật thông tin tác giả"
     });
   }
 };
@@ -169,7 +169,7 @@ export const deleteArticleAuthor = async (req, res) => {
     if (!articleAuthor) {
       return res.status(404).json({
         success: false,
-        message: 'Article author not found'
+        message: 'tác giả không tồn tại'
       });
     }
 
@@ -187,15 +187,14 @@ export const deleteArticleAuthor = async (req, res) => {
     console.error("Error in delete ArticleAuthor:", error);
     res.status(500).json({
       success: false,
-      message: "Server error while deleting article author"
+      message: "Lỗi server khi xóa thông tin tác giả"
     });
   }
 };
 
 export const getArticleAuthorsByArticle = async (req, res) => {
   try {
-    // This function assumes there's a relationship between articles and authors
-    // You may need to adjust this based on your actual data model
+    // Chức năng này giả định có mối quan hệ giữa các bài viết và tác giả
     const articleAuthors = await ArticleAuthor.find({ articleId: req.params.articleId })
       .populate('userId', 'name email')
       .sort('order');
@@ -210,7 +209,7 @@ export const getArticleAuthorsByArticle = async (req, res) => {
     console.error("Error in getArticleAuthorsByArticle:", error);
     res.status(500).json({
       success: false,
-      message: "Server error while fetching article authors"
+      message: "Lỗi server khi lấy thông tin tác giả theo bài báo"
     });
   }
 }; 

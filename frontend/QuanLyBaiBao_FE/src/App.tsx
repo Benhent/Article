@@ -42,6 +42,10 @@ import Reviewdetail from "./pages/root/_rootpages/partial/Review/MyReviewdetail"
 import MyArticleCreate from "./pages/root/_rootpages/partial/Article/MyArticlecreate";
 import MyArticleDetail from "./pages/root/_rootpages/partial/Article/MyArticledetail";
 import MyArticleEdit from "./pages/root/_rootpages/partial/Article/MyArticleedit";
+import UserManage from "./pages/Admin/_adminpages/userManage";
+import ContactManage from "./pages/Admin/_adminpages/contactManage";
+import DiscussionManage from "./pages/Admin/_adminpages/discussionManage";
+import DiscussionDetail from "./pages/Admin/_adminpages/partial/discussion/discussionDetail";
 const App: React.FC = () => {
   const { isCheckingAuth, checkAuth } = useAuthStore();
   const location = useLocation();
@@ -91,6 +95,10 @@ const App: React.FC = () => {
             <Route path='/admin/fields' element={<FieldManage />}/>
             <Route path='/admin/reviews' element={<ReviewManage />}/>
             <Route path='/admin/reviews/:id' element={<ReviewDetail />}/>
+            <Route path='/admin/users' element={<UserManage />}/>
+            <Route path='/admin/contact' element={<ContactManage />}/>
+            <Route path='/admin/discussions' element={<DiscussionManage />}/>
+            <Route path='admin/discussions/:id' element={<DiscussionDetail/>}/>
           </Route>
 
           {/* auth routes */}

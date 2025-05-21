@@ -12,13 +12,13 @@ import {
   Send,
   User,
 } from "lucide-react"
-import { IconType } from "react-icons"
 import { Badge } from "../../../components/ui/badge"
 import { Button } from "../../../components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../components/ui/card"
-import Input from "../../../components/Input"
+import { Input } from "../../../components/ui/input"
 import { Label } from "../../../components/ui/label"
 import { Textarea } from "../../../components/ui/textarea"
+import useContactStore from "../../../store/contact"
 
 export default function Contact() {
   return (
@@ -137,20 +137,13 @@ function AnimatedSection({ children, className = "" }: AnimatedSectionProps) {
 }
 
 function ContactSection() {
-  const [formState, setFormState] = useState<{
-    name: string;
-    email: string;
-    subject: string;
-    department: string;
-    message: string;
-  }>({
+  const { submitContact, loading } = useContactStore();
+  const [formState, setFormState] = useState({
     name: "",
     email: "",
-    subject: "", 
-    department: "",
+    subject: "",
     message: "",
   })
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -158,13 +151,10 @@ function ContactSection() {
     setFormState((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsSubmitting(true)
-
-    // Simulate form submission
-    setTimeout(() => {
-      setIsSubmitting(false)
+    try {
+      await submitContact(formState)
       setIsSubmitted(true)
       // Reset form after 3 seconds
       setTimeout(() => {
@@ -173,11 +163,12 @@ function ContactSection() {
           name: "",
           email: "",
           subject: "",
-          department: "",
           message: "",
         })
       }, 3000)
-    }, 1500)
+    } catch (error) {
+      // Error is handled by the store
+    }
   }
 
   return (
@@ -211,13 +202,15 @@ function ContactSection() {
                   <div className="space-y-2">
                     <Label htmlFor="name">Họ và tên</Label>
                     <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
+                        id="name"
                         name="name"
-                        icon={User as IconType}
                         value={formState.name}
                         onChange={handleChange}
                         required
-                        className="pl-10 bg-white"
+                        className="pl-10"
+                        placeholder="Nhập họ và tên"
                       />
                     </div>
                   </div>
@@ -225,31 +218,35 @@ function ContactSection() {
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
                     <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
-                        icon={Mail as IconType}
+                        id="email"
                         name="email"
                         type="email"
                         value={formState.email}
                         onChange={handleChange}
                         required
                         className="pl-10"
+                        placeholder="Nhập email"
                       />
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="subject">Tiêu đề</Label>
-                    <div className="relative">
-                      <Input
-                        icon={MessageSquare as IconType}
-                        name="subject"
-                        value={formState.subject}
-                        onChange={handleChange}
-                        required
-                        className="pl-10"
-                      />
-                    </div>
+                  <Label htmlFor="subject">Tiêu đề</Label>
+                  <div className="relative">
+                    <MessageSquare className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="subject"
+                      name="subject"
+                      value={formState.subject}
+                      onChange={handleChange}
+                      required
+                      className="pl-10"
+                      placeholder="Nhập tiêu đề"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -268,9 +265,9 @@ function ContactSection() {
                 <Button
                   type="submit"
                   className="w-full md:w-auto bg-primary hover:bg-primary/90"
-                  disabled={isSubmitting}
+                  disabled={loading}
                 >
-                  {isSubmitting ? (
+                  {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Đang gửi...

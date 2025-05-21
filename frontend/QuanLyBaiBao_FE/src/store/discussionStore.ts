@@ -11,7 +11,12 @@ interface DiscussionState {
 interface DiscussionStore extends DiscussionState {
   fetchDiscussions: (articleId: string) => Promise<void>
   fetchDiscussionById: (id: string) => Promise<void>
-  createDiscussion: (data: { articleId: string; subject: string; type?: string }) => Promise<string | undefined>
+  createDiscussion: (data: { 
+    articleId: string; 
+    subject: string; 
+    type?: string;
+    participants?: string[];
+  }) => Promise<string | undefined>
   updateDiscussion: (id: string, data: { subject?: string; type?: string; isActive?: boolean }) => Promise<void>
   deleteDiscussion: (id: string) => Promise<void>
   addMessage: (discussionId: string, data: { content: string; attachments?: string[] }) => Promise<void>
@@ -34,7 +39,9 @@ const useDiscussionStore = create<DiscussionStore>((set) => ({
       setLoading("discussions", true)
       setError("discussions", null)
 
-      const response = await apiService.get<Discussion[]>(`/discussions/article/${articleId}`)
+      // If articleId is 'all', fetch all discussions
+      const endpoint = articleId === 'all' ? '/discussions' : `/discussions/article/${articleId}`
+      const response = await apiService.get<Discussion[]>(endpoint)
 
       set({
         discussions: response.data,
@@ -69,7 +76,12 @@ const useDiscussionStore = create<DiscussionStore>((set) => ({
     }
   },
 
-  createDiscussion: async (data: { articleId: string; subject: string; type?: string }) => {
+  createDiscussion: async (data: { 
+    articleId: string; 
+    subject: string; 
+    type?: string;
+    participants?: string[];
+  }) => {
     const { setLoading, setError, showSuccessToast, showErrorToast } = useUIStore.getState()
 
     try {

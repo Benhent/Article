@@ -600,3 +600,81 @@ export const getUserByEmail = async (req, res) => {
   }
 }
 
+export const updateUserRole = async (req, res) => {
+  try {
+    const { userId, newRole } = req.body;
+
+    // Validate input
+    if (!userId || !newRole) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID and new role are required"
+      });
+    }
+
+    // Validate role value based on User model enum
+    const validRoles = ['user', 'author', 'admin', 'reviewer', 'editor', 'submitter'];
+    if (!validRoles.includes(newRole)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid role value. Must be one of: user, author, admin, reviewer, editor, submitter"
+      });
+    }
+
+    // Check if user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    // Update user role
+    user.role = newRole;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "User role updated successfully",
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error("Error in updateUserRole:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while updating user role"
+    });
+  }
+};
+
+export const deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    
+    const user = await User.findByIdAndDelete(userId);
+    
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "User not found" 
+      });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      message: "User deleted successfully" 
+    });
+  } catch (error) {
+    console.error("Error in deleteUser:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Server error while deleting user" 
+    });
+  }
+};

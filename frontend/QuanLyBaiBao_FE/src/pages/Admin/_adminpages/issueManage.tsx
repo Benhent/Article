@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { Plus, Pencil, Trash2 } from "lucide-react"
 import { useIssueStore } from "../../../store/rootStore"
-import type { Issue } from "../../../types/article"
+import type { Issue } from "../../../types/issue"
 import { toast } from "react-hot-toast"
 
 import { Button } from "../../../components/ui/button"
@@ -40,7 +40,7 @@ const IssueManage = () => {
     isPublished: false,
   })
 
-  useEffect(() => {
+  useEffect(() => {  
     fetchIssues()
   }, [fetchIssues])
 
@@ -51,7 +51,9 @@ const IssueManage = () => {
         title: issue.title,
         volumeNumber: issue.volumeNumber,
         issueNumber: issue.issueNumber,
-        publicationDate: issue.publicationDate.split("T")[0],
+        publicationDate: typeof issue.publicationDate === 'string' 
+          ? issue.publicationDate.split("T")[0]
+          : new Date(issue.publicationDate).toISOString().split("T")[0],
         isPublished: issue.isPublished,
       })
     } else {
@@ -83,7 +85,7 @@ const IssueManage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      if (selectedIssue) {
+      if (selectedIssue?._id) {
         await updateIssue(selectedIssue._id, formData)
         toast.success("Issue updated successfully")
       } else {
@@ -97,7 +99,7 @@ const IssueManage = () => {
   }
 
   const handleDelete = async () => {
-    if (!selectedIssue) return
+    if (!selectedIssue?._id) return
     try {
       await deleteIssue(selectedIssue._id)
       toast.success("Issue deleted successfully")
@@ -218,7 +220,11 @@ const IssueManage = () => {
                 id="publicationDate"
                 name="publicationDate"
                 type="date"
-                value={formData.publicationDate}
+                value={typeof formData.publicationDate === 'string' 
+                  ? formData.publicationDate 
+                  : formData.publicationDate instanceof Date 
+                    ? formData.publicationDate.toISOString().split("T")[0]
+                    : new Date().toISOString().split("T")[0]}
                 onChange={handleInputChange}
                 required
               />
