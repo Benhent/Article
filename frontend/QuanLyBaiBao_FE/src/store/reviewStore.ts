@@ -24,7 +24,13 @@ interface ReviewStore extends ReviewState {
   declineReview: (id: string, declineReason: string) => Promise<void>
   completeReview: (
     id: string,
-    data: { recommendation: string; commentsForAuthor?: string; commentsForEditor?: string },
+    data: { 
+      recommendation: string; 
+      comments: {
+        forAuthor: string;
+        forEditor?: string;
+      }
+    },
   ) => Promise<void>
   sendReminder: (id: string) => Promise<void>
   resetReview: () => void
@@ -87,9 +93,11 @@ const useReviewStore = create<ReviewStore>((set, get) => ({
       setLoading("createReview", true)
       setError("createReview", null)
 
-      await apiService.post<Review>("/reviews", data)
+      const response = await apiService.post<Review>("/reviews", data)
 
-      get().fetchReviews()
+      set((state) => ({
+        reviews: [...state.reviews, response.data]
+      }))
 
       showSuccessToast("Review invitation sent successfully")
     } catch (error) {
@@ -114,7 +122,7 @@ const useReviewStore = create<ReviewStore>((set, get) => ({
       const response = await apiService.post<Review[]>("/reviews/multiple", { articleId, reviewers })
 
       set((state) => ({
-        reviews: [...state.reviews, ...response.data],
+        reviews: [...state.reviews, ...response.data]
       }))
 
       showSuccessToast(`${response.data.length} review invitations sent successfully`)
@@ -223,7 +231,13 @@ const useReviewStore = create<ReviewStore>((set, get) => ({
 
   completeReview: async (
     id: string,
-    data: { recommendation: string; commentsForAuthor?: string; commentsForEditor?: string },
+    data: { 
+      recommendation: string; 
+      comments: {
+        forAuthor: string;
+        forEditor?: string;
+      }
+    },
   ) => {
     const { setLoading, setError, showSuccessToast, showErrorToast } = useUIStore.getState()
 

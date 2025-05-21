@@ -12,7 +12,7 @@ import { RadioGroup, RadioGroupItem } from "../../../../../components/ui/radio-g
 import { Label } from "../../../../../components/ui/label"
 import { Clock, CheckCircle, XCircle, AlertCircle, Download } from "lucide-react"
 import LoadingSpinner from "../../../../../components/LoadingSpinner"
-import type { ArticleAuthor } from "../../../../../types/article"
+// import type { Review } from "../../../../../types/review"
 
 const STATUS_COLORS = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -47,7 +47,7 @@ const MyReviewdetail = () => {
   const { id } = useParams()
   // const { user } = useAuthStore()
   const { currentReview, fetchReviewById, completeReview } = useReviewStore()
-  const { loading } = useUIStore()
+  const { loading, showErrorToast } = useUIStore()
   const { article, fetchArticleById } = useArticleStore()
   const [recommendation, setRecommendation] = useState<string>("")
   const [commentsForAuthor, setCommentsForAuthor] = useState<string>("")
@@ -60,25 +60,42 @@ const MyReviewdetail = () => {
   }, [id, fetchReviewById])
 
   useEffect(() => {
-    if (currentReview && typeof currentReview.articleId === "string") {
-      fetchArticleById(currentReview.articleId)
-    } else if (currentReview && typeof currentReview.articleId === "object" && currentReview.articleId?._id) {
-      fetchArticleById(currentReview.articleId._id)
+    if (currentReview?.articleId) {
+      const articleId = typeof currentReview.articleId === "string" 
+        ? currentReview.articleId 
+        : (currentReview.articleId as any)._id
+      if (articleId) {
+        fetchArticleById(articleId)
+      }
     }
   }, [currentReview, fetchArticleById])
 
   const handleSubmitReview = async () => {
     if (!id) return
 
+    // Validate required fields
+    if (!recommendation) {
+      showErrorToast("Vui lòng chọn đề xuất")
+      return
+    }
+
+    if (!commentsForAuthor) {
+      showErrorToast("Vui lòng nhập nhận xét cho tác giả")
+      return
+    }
+
     try {
       await completeReview(id, {
         recommendation,
-        commentsForAuthor,
-        commentsForEditor,
+        comments: {
+          forAuthor: commentsForAuthor,
+          forEditor: commentsForEditor || undefined
+        }
       })
       navigate("/my-reviews")
     } catch (error) {
       console.error("Error submitting review:", error)
+      showErrorToast("Có lỗi xảy ra khi gửi phản biện")
     }
   }
 
@@ -135,7 +152,7 @@ const MyReviewdetail = () => {
               <p className="text-gray-600">
                 {Array.isArray(article?.authors)
                   ? article.authors
-                      .map((author: ArticleAuthor | string) =>
+                      .map((author) =>
                         typeof author === "string" ? author : author.fullName
                       )
                       .join(", ")
