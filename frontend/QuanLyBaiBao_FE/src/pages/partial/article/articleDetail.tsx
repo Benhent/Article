@@ -13,17 +13,17 @@ import { Button } from "../../../components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs"
 import { Badge } from "../../../components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../../components/ui/card"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "../../../components/ui/alert-dialog"
+// import {
+//   AlertDialog,
+//   AlertDialogAction,
+//   AlertDialogCancel,
+//   AlertDialogContent,
+//   AlertDialogDescription,
+//   AlertDialogFooter,
+//   AlertDialogHeader,
+//   AlertDialogTitle,
+//   AlertDialogTrigger,
+// } from "../../../components/ui/alert-dialog"
 import {
   Dialog,
   DialogContent,
@@ -372,7 +372,7 @@ export default function ArticleDetail() {
           actions.push({
             label: "Chỉnh sửa",
             icon: <Edit className="mr-2 h-4 w-4" />,
-            action: () => navigate(`/admin/articles/${article._id}/edit`),
+            action: () => navigate(`/post-article/${article._id}/edit`),
             variant: "outline" as const,
           })
         }
@@ -471,36 +471,31 @@ export default function ArticleDetail() {
     return actions
   }
 
-  // Get back button based on route
-  const getBackButton = () => {
-    if (isAdminRoute) {
-      return {
-        label: "Quay lại danh sách",
-        path: "/admin/articles"
-      }
-    } else if (isPostArticleRoute) {
-      return {
-        label: "Quay lại bài viết",
-        path: "/post-article"
-      }
-    } else {
-      return {
-        label: "Quay lại trang chủ",
-        path: "/"
-      }
+  // Get back button based on current route
+  const getBackRoute = () => {
+    if (isPostArticleRoute) {
+      return '/post-article'
     }
+    if (isAdminRoute) {
+      return '/admin/articles'
+    }
+    return '/'
   }
 
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate(getBackButton().path)} 
-          className="flex items-center"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" /> {getBackButton().label}
-        </Button>
+        <div>
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate(getBackRoute())} 
+            className="flex items-center mb-2"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" /> Quay lại danh sách
+          </Button>
+          <h1 className="text-2xl font-bold">Chi tiết bài báo</h1>
+          <p className="text-gray-500">Xem thông tin chi tiết về bài báo</p>
+        </div>
 
         <div className="flex gap-2">
           {getAvailableActions().map((action, index) => (

@@ -1,7 +1,7 @@
 import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { useNavigate, useParams, useLocation } from "react-router-dom"
 import { useArticleStore, useFieldStore, useFileStore, useUIStore, useAuthorStore } from "../../../store/rootStore"
 import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
@@ -75,9 +75,14 @@ const isArticleAuthor = (author: any): author is ArticleAuthor => {
   )
 }
 
-export default function ArticleEdit() {
+interface ArticleEditProps {
+  parentRoute?: string;
+}
+
+export default function ArticleEdit({ parentRoute }: ArticleEditProps) {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const { article, fetchArticleById, updateArticle, loading } = useArticleStore()
   const { fields, fetchFields } = useFieldStore()
   const { files, getArticleFiles, deleteArticleFile } = useFileStore()
@@ -652,6 +657,19 @@ export default function ArticleEdit() {
     return colors[status] || "outline"
   }
 
+  // Thêm hàm getBackRoute để xác định route quay lại
+  const getBackRoute = () => {
+    if (parentRoute) {
+      return parentRoute;
+    }
+    // Nếu không có parentRoute, xác định dựa trên đường dẫn hiện tại
+    const path = location.pathname;
+    if (path.startsWith('/admin/articles')) {
+      return '/admin/articles';
+    }
+    return '/post-article';
+  }
+
   if (loading.fields || (loading.article && !isLoaded)) {
     return <LoadingSpinner />
   }
@@ -662,7 +680,7 @@ export default function ArticleEdit() {
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <Button variant="ghost" onClick={() => navigate("/admin/articles")} className="flex items-center mb-2">
+            <Button variant="ghost" onClick={() => navigate(getBackRoute())} className="flex items-center mb-2">
               <ArrowLeft className="mr-2 h-4 w-4" /> Quay lại danh sách
             </Button>
             <h1 className="text-2xl font-bold">Bài báo đã xuất bản</h1>
@@ -948,7 +966,7 @@ export default function ArticleEdit() {
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <Button variant="ghost" onClick={() => navigate("/admin/articles")} className="flex items-center mb-2">
+          <Button variant="ghost" onClick={() => navigate(getBackRoute())} className="flex items-center mb-2">
             <ArrowLeft className="mr-2 h-4 w-4" /> Quay lại danh sách
           </Button>
           <h1 className="text-2xl font-bold">Chỉnh sửa bài báo</h1>

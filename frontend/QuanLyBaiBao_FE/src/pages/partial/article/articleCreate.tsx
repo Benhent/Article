@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import { useArticleStore, useFieldStore, useUIStore } from "../../../store/rootStore"
 import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
@@ -56,8 +56,13 @@ import apiService from "../../../services/api"
 import type { ArticleFile } from "../../../types/file"
 import type { Article } from "../../../types/article"
 
-export default function ArticleCreate() {
+interface ArticleCreateProps {
+  parentRoute?: string;
+}
+
+export default function ArticleCreate({ parentRoute }: ArticleCreateProps) {
   const navigate = useNavigate()
+  const location = useLocation()
   const { createArticle, loading } = useArticleStore()
   const { fields, fetchFields } = useFieldStore()
   const { showSuccessToast, showErrorToast } = useUIStore()
@@ -500,8 +505,8 @@ export default function ArticleCreate() {
       setUploadProgress(100)
       showSuccessToast("Đã nộp bài báo thành công")
 
-      // Chuyển hướng đến trang danh sách bài báo
-      navigate(`/admin/articles`)
+      // Navigate back to parent route
+      navigate(getBackRoute())
     } catch (error) {
       console.error("Error creating article:", error)
       showErrorToast("Có lỗi xảy ra khi tạo bài báo")
@@ -534,6 +539,20 @@ export default function ArticleCreate() {
     }
   }
 
+  // Determine the back route based on props or current location
+  const getBackRoute = () => {
+    if (parentRoute) {
+      return parentRoute;
+    }
+    // Fallback to determining route from current location
+    if (location.pathname.startsWith('/admin')) {
+      return '/admin/articles';
+    } else if (location.pathname.startsWith('/post-article')) {
+      return '/post-article';
+    }
+    return '/';
+  }
+
   if (loading.fields) {
     return <LoadingSpinner />
   }
@@ -542,7 +561,7 @@ export default function ArticleCreate() {
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <Button variant="ghost" onClick={() => navigate("/admin/articles")} className="flex items-center mb-2">
+          <Button variant="ghost" onClick={() => navigate(getBackRoute())} className="flex items-center mb-2">
             <ArrowLeft className="mr-2 h-4 w-4" /> Quay lại danh sách
           </Button>
           <h1 className="text-2xl font-bold">Tạo bài báo mới</h1>
