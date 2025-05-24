@@ -1,5 +1,6 @@
 import { ArticleFile } from '../models/articles/articleFile.model.js';
 import { Article } from '../models/articles/article.model.js';
+import { Review } from '../models/articles/review.model.js';
 import { v4 as uuidv4 } from 'uuid';
 
 // Upload file cho bài báo - nhận URL từ Cloudinary đã được upload từ frontend

@@ -7,7 +7,7 @@ import { Button } from "../../../components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card"
 import { Badge } from "../../../components/ui/badge"
 import LoadingSpinner from "../../../components/LoadingSpinner"
-import type { Review } from "../../../types/article"
+import type { Review } from "../../../types/review"
 
 const STATUS_LABELS: Record<string, string> = {
   invited: "Đang mời",

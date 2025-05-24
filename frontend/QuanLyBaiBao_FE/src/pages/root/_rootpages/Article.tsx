@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react"
 import useArticleStore from "../../../store/articleStore"
 import useUIStore from "../../../store/uiStore"
 import useFieldStore from "../../../store/fieldStore"
-import type { Article, ArticleAuthor } from "../../../types/article"
+import type { Article} from "../../../types/article"
+import type { ArticleAuthor } from "../../../types/author"
 import LoadingSpinner from "../../../components/LoadingSpinner"
 import { Button } from "../../../components/ui/button"
 import {
@@ -31,7 +32,7 @@ import { format } from "date-fns"
 import { Card, CardContent } from "../../../components/ui/card"
 import { Badge } from "../../../components/ui/badge"
 import { cn } from "../../../lib/utils"
-import ArticleDetail from "./partial/Article/Articledetail"
+import ArticleDetail from "../../partial/article/articleDetail"
 
 const ArticlePage: React.FC = () => {
   const { articles = [], fetchArticles, fetchArticleById, article, pagination } = useArticleStore()

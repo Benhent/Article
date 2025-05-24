@@ -48,7 +48,7 @@ import { Label } from "../../../components/ui/label"
 import type { Article } from "../../../types/article"
 import type { Field } from "../../../types/field"
 import apiService from "../../../services/api"
-import CreateDiscussionModal from "./partial/discussion/CreateDiscussionModal"
+import CreateDiscussionModal from "../../partial/discussion/CreateDiscussionModal"
 
 // Định nghĩa màu và nhãn cho các trạng thái bài báo
 const statusColor: Record<string, string> = {

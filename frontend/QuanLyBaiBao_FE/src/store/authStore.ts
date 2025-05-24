@@ -5,7 +5,7 @@ const API_URL = import.meta.env.MODE === "development" ? "http://localhost:5000/
 
 axios.defaults.withCredentials = true;
 
-interface User {
+export interface User {
   _id: string;
   name: string;
   username: string;

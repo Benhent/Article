@@ -1,51 +1,52 @@
 import { useEffect } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-
+// components
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./store/authStore";
+import NavBar from "./components/NavBar";
+import Footer from "./components/Footer";
+import LoadingSpinner from "./components/LoadingSpinner";
 // import {ProtectedRoute} from "./pages/root/rootLayout";
 // import {RedirectAuthenticatedUser} from "./pages/auth/authLayout";
 import AdminLayout from "./pages/Admin/adminLayout";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
-
+// auth pages
 import RegisterPage from "./pages/auth/_authpages/RegisterPage";
 import LoginPage from "./pages/auth/_authpages/LoginPage";
 import ForgotPasswordPage from "./pages/auth/_authpages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/auth/_authpages/ResetPasswordPage";
 import VerifyEmailPage from "./pages/auth/_authpages/VerifyEmailPage";
-
+// dropdown pages
+import ProfilePage from "./pages/root/_rootpages/Profile";
+import Security from "./pages/root/_rootpages/Security";
+import Review from "./pages/root/_rootpages/Review";
+// user interface pages
 import Dashboard from "./pages/root/_rootpages/Dashboard";
 import Article from "./pages/root/_rootpages/Article";
+import PostArticle from "./pages/root/_rootpages/Postarticle";
 import Guide from "./pages/root/_rootpages/Guide";
 import Contact from "./pages/root/_rootpages/Contact";
 
-import ProfilePage from "./pages/root/_rootpages/Profile";
-import Security from "./pages/root/_rootpages/Security";
-import PostArticle from "./pages/root/_rootpages/Postarticle";
-import ArticleManage from "./pages/Admin/_adminpages/articleManage";
-
-import NavBar from "./components/NavBar";
-import Footer from "./components/Footer";
-import LoadingSpinner from "./components/LoadingSpinner";
-import ArticleCreate from "./pages/Admin/_adminpages/partial/article/articleCreate";
-import ArticleDetail from "./pages/Admin/_adminpages/partial/article/articleDetail";
-import ArticleEdit from "./pages/Admin/_adminpages/partial/article/articleEdit";
 import TestFetchField from "./pages/root/_rootpages/test";
+
+// partial pages
+import ArticleCreate from "./pages/partial/article/articleCreate";
+import ArticleDetail from "./pages/partial/article/articleDetail";
+import ArticleEdit from "./pages/partial/article/articleEdit";
+import ReviewDetail from "./pages/partial/review/reviewDetail";
+import ReviewJudge from "./pages/partial/review/reviewJudge";
+
+// admin pages
+import AdminDashboard from "./pages/Admin/_adminpages/adminDashboard";
+import ArticleManage from "./pages/Admin/_adminpages/articleManage";
 import AuthorManage from "./pages/Admin/_adminpages/authorManage";
 import FieldManage from "./pages/Admin/_adminpages/fieldManage";
 import IssueManage from "./pages/Admin/_adminpages/issueManage";
-import AdminDashboard from "./pages/Admin/_adminpages/adminDashboard";
 import ReviewManage from "./pages/Admin/_adminpages/reviewManage";
-import ReviewDetail from "./pages/Admin/_adminpages/partial/review/reviewDetail";
-import Review from "./pages/root/_rootpages/Review";
-import Reviewdetail from "./pages/root/_rootpages/partial/Review/MyReviewdetail";
-import MyArticleCreate from "./pages/root/_rootpages/partial/Article/MyArticlecreate";
-import MyArticleDetail from "./pages/root/_rootpages/partial/Article/MyArticledetail";
-import MyArticleEdit from "./pages/root/_rootpages/partial/Article/MyArticleedit";
 import UserManage from "./pages/Admin/_adminpages/userManage";
 import ContactManage from "./pages/Admin/_adminpages/contactManage";
 import DiscussionManage from "./pages/Admin/_adminpages/discussionManage";
-import DiscussionDetail from "./pages/Admin/_adminpages/partial/discussion/discussionDetail";
+
 const App: React.FC = () => {
   const { isCheckingAuth, checkAuth } = useAuthStore();
   const location = useLocation();
@@ -72,16 +73,17 @@ const App: React.FC = () => {
           {/* public routes */}
           <Route path='/' element={<Dashboard />}/>
           <Route path='/article' element={<Article />}/>
+          
           <Route path='/guide' element={<Guide />}/>
           <Route path='/contact' element={<Contact />}/>
           <Route path='/security' element={<Security />}/>
           <Route path='/profile' element={<ProfilePage />}/>
           <Route path='/post-article' element={<PostArticle />}/>
           <Route path='/my-reviews' element={<Review />}/>
-          <Route path='/my-reviews/:id' element={<Reviewdetail />}/>
-          <Route path='/post-article/create' element={<MyArticleCreate />}/>
-          <Route path='/post-article/:id' element={<MyArticleDetail />}/>
-          <Route path='/post-article/:id/edit' element={<MyArticleEdit />}/>
+          <Route path='/my-reviews/:id' element={<ReviewJudge />}/>
+          <Route path='/post-article/create' element={<ArticleCreate />}/>
+          <Route path='/post-article/:id' element={<ArticleDetail />}/>
+          <Route path='/post-article/:id/edit' element={<ArticleEdit />}/>
           
           {/* admin routes */}
           <Route element={<AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>}>
@@ -98,7 +100,6 @@ const App: React.FC = () => {
             <Route path='/admin/users' element={<UserManage />}/>
             <Route path='/admin/contact' element={<ContactManage />}/>
             <Route path='/admin/discussions' element={<DiscussionManage />}/>
-            <Route path='admin/discussions/:id' element={<DiscussionDetail/>}/>
           </Route>
 
           {/* auth routes */}

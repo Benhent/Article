@@ -27,6 +27,7 @@ const PORT = process.env.PORT;
 const httpServer = createServer(app);
 
 initSocket(httpServer);
+
 app.use(cors({
     origin: process.env.CLIENT_URL,
     credentials: true
@@ -59,7 +60,7 @@ app.use("/api/issues", issueRoutes)
 app.use("/api/discussions", discussionRoutes)
 app.use("/api/contacts", contactRoutes)
 
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
     connectDB();
     console.log("Server is running on port: ", PORT);
 })
