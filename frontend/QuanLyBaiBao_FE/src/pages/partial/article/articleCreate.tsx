@@ -1,10 +1,9 @@
-"use client"
-
 import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useArticleStore, useFieldStore, useUIStore } from "../../../store/rootStore"
+import useFileStore from "../../../store/fileStore"
 import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
 import { Textarea } from "../../../components/ui/textarea"
@@ -51,10 +50,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../../../components/ui/dialog"
-import { uploadArticleThumbnailToCloudinary, uploadArticleFileToCloudinary } from "../../../config/cloudinary"
-import apiService from "../../../services/api"
-import type { ArticleFile } from "../../../types/file"
-import type { Article } from "../../../types/article"
+import { uploadArticleThumbnailToCloudinary } from "../../../config/cloudinary"
 
 interface ArticleCreateProps {
   parentRoute?: string;
@@ -66,6 +62,7 @@ export default function ArticleCreate({ parentRoute }: ArticleCreateProps) {
   const { createArticle, loading } = useArticleStore()
   const { fields, fetchFields } = useFieldStore()
   const { showSuccessToast, showErrorToast } = useUIStore()
+  const { uploadArticleFile } = useFileStore()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const thumbnailInputRef = useRef<HTMLInputElement>(null)
@@ -395,9 +392,7 @@ export default function ArticleCreate({ parentRoute }: ArticleCreateProps) {
     // Validate toàn bộ form
     const isValid = validateForm()
     if (!isValid) {
-      // Hiển thị thông báo lỗi và chuyển đến tab có lỗi
       showErrorToast("Vui lòng kiểm tra lại thông tin bài báo")
-
       if (formErrors.title || formErrors.abstract || formErrors.field || formErrors.keywords) {
         setActiveTab("basic-info")
       } else if (formErrors.authors || formErrors.correspondingAuthor) {
@@ -405,7 +400,6 @@ export default function ArticleCreate({ parentRoute }: ArticleCreateProps) {
       } else if (formErrors.articleFile) {
         setActiveTab("files")
       }
-
       return
     }
 
@@ -413,7 +407,7 @@ export default function ArticleCreate({ parentRoute }: ArticleCreateProps) {
     setUploadProgress(10)
 
     try {
-      // Chuẩn bị dữ liệu JSON
+      // Chuẩn bị dữ liệu JSON cho bài báo
       const articleData: any = {
         title: formData.title,
         titlePrefix: formData.titlePrefix || "",
@@ -422,7 +416,6 @@ export default function ArticleCreate({ parentRoute }: ArticleCreateProps) {
         field: formData.field,
         articleLanguage: formData.articleLanguage,
         submitterNote: formData.submitterNote || "",
-        status: "submitted",
 
         // Xử lý từ khóa
         keywords: formData.keywords.length > 0 ? formData.keywords : ["Chưa phân loại"],
@@ -440,7 +433,7 @@ export default function ArticleCreate({ parentRoute }: ArticleCreateProps) {
           isCorresponding: author.isCorresponding,
           hasAccount: false,
           order: index + 1,
-        })),
+        }))
       }
 
       // Upload thumbnail if exists
@@ -450,17 +443,15 @@ export default function ArticleCreate({ parentRoute }: ArticleCreateProps) {
           showSuccessToast("Đang tải lên ảnh thu nhỏ...")
           const thumbnailUrl = await uploadArticleThumbnailToCloudinary(thumbnail)
           articleData.thumbnail = thumbnailUrl
-          setUploadProgress(40)
+          setUploadProgress(30)
         } catch (error) {
           console.error("Error uploading thumbnail:", error)
           showErrorToast("Lỗi khi tải lên ảnh thu nhỏ")
-          setIsSubmitting(false)
-          return
         }
       }
 
-      // Create article first
-      setUploadProgress(50)
+      // Create article (backend will set status as submitted)
+      setUploadProgress(40)
       const newArticleId = await createArticle(articleData)
       if (!newArticleId) {
         showErrorToast("Không thể tạo bài báo")
@@ -471,42 +462,28 @@ export default function ArticleCreate({ parentRoute }: ArticleCreateProps) {
       // Upload article file if exists
       if (articleFile) {
         try {
-          setUploadProgress(60)
+          setUploadProgress(50)
           showSuccessToast("Đang tải lên file bài báo...")
-          const cloudinaryData = await uploadArticleFileToCloudinary(articleFile)
           
-          // Create article file record
-          const fileResponse = await apiService.post<ArticleFile>(`/files/${newArticleId}`, {
-            articleId: newArticleId,
-            fileCategory: "manuscript",
-            round: 1,
-            fileName: cloudinaryData.fileName || articleFile.name,
-            originalName: articleFile.name,
-            fileType: articleFile.type,
-            fileSize: articleFile.size,
-            fileUrl: cloudinaryData.fileUrl,
-            filePath: cloudinaryData.fileUrl
-          });
+          // Upload file using fileStore (now allowed in submitted status)
+          await uploadArticleFile(newArticleId, "manuscript", articleFile, 1)
+          
+          setUploadProgress(100)
+          showSuccessToast("Đã nộp bài báo thành công")
 
-          // Update article with file reference
-          await apiService.put<Article>(`/articles/${newArticleId}/update`, {
-            articleFile: fileResponse.data._id
-          });
-
-          setUploadProgress(90)
+          // Navigate back to parent route
+          navigate(getBackRoute())
         } catch (error) {
-          console.error("Error uploading article file:", error)
-          showErrorToast("Lỗi khi tải lên file bài báo")
+          console.error("Error in submission process:", error)
+          showErrorToast("Có lỗi xảy ra trong quá trình nộp bài")
           setIsSubmitting(false)
           return
         }
+      } else {
+        showErrorToast("Vui lòng tải lên file bài báo")
+        setIsSubmitting(false)
+        return
       }
-
-      setUploadProgress(100)
-      showSuccessToast("Đã nộp bài báo thành công")
-
-      // Navigate back to parent route
-      navigate(getBackRoute())
     } catch (error) {
       console.error("Error creating article:", error)
       showErrorToast("Có lỗi xảy ra khi tạo bài báo")
@@ -1551,9 +1528,16 @@ export default function ArticleCreate({ parentRoute }: ArticleCreateProps) {
                           <ArrowLeft className="mr-2 h-4 w-4" /> Quay lại
                         </Button>
                         <Button
-                          onClick={handleSubmit}
+                          onClick={() => {
+                            const isValid = validateForm();
+                            if (isValid) {
+                              setShowConfirmation(true);
+                            } else {
+                              showErrorToast("Vui lòng kiểm tra lại thông tin bài báo");
+                            }
+                          }}
                           className="flex items-center"
-                          disabled={isSubmitting || !formData.title.trim()}
+                          disabled={isSubmitting}
                         >
                           {isSubmitting ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1562,6 +1546,24 @@ export default function ArticleCreate({ parentRoute }: ArticleCreateProps) {
                           )}
                           Nộp bài báo
                         </Button>
+
+                        {/* Dialog xác nhận nộp bài */}
+                        <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Xác nhận nộp bài báo</DialogTitle>
+                              <DialogDescription>
+                                Bạn có chắc chắn muốn nộp bài báo này? Sau khi nộp, bài báo sẽ được chuyển đến ban biên tập để xem xét.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                              <Button variant="outline" onClick={() => setShowConfirmation(false)}>
+                                Hủy
+                              </Button>
+                              <Button onClick={handleSubmit}>Nộp bài báo</Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
                       </div>
                     </div>
                   </div>

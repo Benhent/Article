@@ -33,7 +33,7 @@ export const uploadArticleFile = async (req, res) => {
     }
     
     // Kiểm tra trạng thái bài báo phù hợp để upload file
-    const allowedUploadStatuses = ['draft', 'revisionRequired', 'resubmitted'];
+    const allowedUploadStatuses = ['draft','submitted', 'revisionRequired', 'resubmitted'];
     
     if (!allowedUploadStatuses.includes(article.status) && !isAdmin && !isEditor) {
       return res.status(400).json({ 
@@ -76,6 +76,11 @@ export const uploadArticleFile = async (req, res) => {
     
     await newFile.save();
     
+    // Nếu là file bản thảo chính, cập nhật trường articleFile của Article
+    if (fileCategory === 'manuscript') {
+      await Article.findByIdAndUpdate(articleId, { articleFile: newFile._id });
+    }
+
     res.status(201).json({ 
       success: true, 
       message: 'Tải file lên thành công', 

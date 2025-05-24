@@ -133,5 +133,4 @@ const useFileStore = create<FileStore>((set) => ({
     }
   },
 }))
-
 export default useFileStore

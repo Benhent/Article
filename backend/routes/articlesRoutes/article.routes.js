@@ -27,6 +27,6 @@ router.delete("/:id", verifyToken, deleteArticle);
 router.patch("/:id/status", verifyToken, authorizeRoles("editor", "admin"), changeArticleStatus);
 router.put("/:id/assign-editor", verifyToken, authorizeRoles("editor", "admin"), assignEditor);
 router.put("/:id/publish", verifyToken, authorizeRoles("editor", "admin", "author"), publishArticle);
-router.put("/:id/update", verifyToken, authorizeRoles("editor", "admin", "submitter"), updateArticle);
+router.put("/:id/update", verifyToken, updateArticle);
 
 export default router;

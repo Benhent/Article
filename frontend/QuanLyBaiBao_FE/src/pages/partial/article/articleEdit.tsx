@@ -85,7 +85,7 @@ export default function ArticleEdit({ parentRoute }: ArticleEditProps) {
   const location = useLocation()
   const { article, fetchArticleById, updateArticle, loading } = useArticleStore()
   const { fields, fetchFields } = useFieldStore()
-  const { files, getArticleFiles, deleteArticleFile } = useFileStore()
+  const { files, getArticleFiles, uploadArticleFile, deleteArticleFile } = useFileStore()
   const { createArticleAuthor, updateArticleAuthor, deleteArticleAuthor } = useAuthorStore()
   const { showSuccessToast, showErrorToast } = useUIStore()
 
@@ -500,11 +500,7 @@ export default function ArticleEdit({ parentRoute }: ArticleEditProps) {
         articleLanguage: formData.articleLanguage,
         submitterNote: formData.submitterNote || "",
         status: "resubmitted",
-
-        // Xử lý từ khóa
         keywords: formData.keywords.length > 0 ? formData.keywords : ["Chưa phân loại"],
-
-        // Xử lý lĩnh vực phụ
         secondaryFields: formData.secondaryFields || [],
       }
 
@@ -515,7 +511,7 @@ export default function ArticleEdit({ parentRoute }: ArticleEditProps) {
           showSuccessToast("Đang tải lên ảnh thu nhỏ...")
           const thumbnailUrl = await uploadArticleThumbnailToCloudinary(thumbnail)
           articleData.thumbnail = thumbnailUrl
-          setUploadProgress(40)
+          setUploadProgress(30)
         } catch (error) {
           console.error("Error uploading thumbnail:", error)
           showErrorToast("Lỗi khi tải lên ảnh thu nhỏ")
@@ -525,28 +521,20 @@ export default function ArticleEdit({ parentRoute }: ArticleEditProps) {
       }
 
       // Upload article file if exists
+      let uploadedFileId = null
       if (articleFile) {
         try {
           setUploadProgress(50)
           showSuccessToast("Đang tải lên file bài báo...")
-          const cloudinaryData = await uploadArticleFileToCloudinary(articleFile)
-
-          // Create article file record
-          const currentRound = article?.currentRound || 1
-          const fileResponse = await apiService.post<ArticleFile>(`/files/${id}`, {
-            articleId: id,
-            fileCategory: "manuscript",
-            round: currentRound,
-            fileName: cloudinaryData.fileName || articleFile.name,
-            originalName: articleFile.name,
-            fileType: articleFile.type,
-            fileSize: articleFile.size,
-            fileUrl: cloudinaryData.fileUrl,
-            filePath: cloudinaryData.fileUrl,
-          })
-
-          // Update article with file reference
-          articleData.articleFile = fileResponse.data._id
+          await uploadArticleFile(id, "manuscript", articleFile, article?.currentRound || 1)
+          // Sau khi upload thành công, lấy lại danh sách file để lấy fileId mới nhất
+          await getArticleFiles(id)
+          // Lấy fileId của file mới nhất (manuscript, round hiện tại, isActive)
+          const latestFile = files.find(f => f.fileCategory === "manuscript" && f.isActive)
+          if (latestFile) {
+            uploadedFileId = latestFile._id
+            articleData.articleFile = uploadedFileId
+          }
           setUploadProgress(70)
         } catch (error) {
           console.error("Error uploading article file:", error)
@@ -560,7 +548,7 @@ export default function ArticleEdit({ parentRoute }: ArticleEditProps) {
       setUploadProgress(80)
       await updateArticle(id, articleData)
 
-      // Handle authors
+      // Handle authors (giữ nguyên như cũ)
       if (article?.authors && Array.isArray(article.authors)) {
         for (const author of article.authors) {
           if (typeof author === "object" && author._id) {
